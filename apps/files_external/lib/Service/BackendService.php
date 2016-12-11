@@ -23,6 +23,7 @@
 
 namespace OCA\Files_External\Service;
 
+use Icewind\SMB\Exception\Exception;
 use \OCP\IConfig;
 
 use \OCA\Files_External\Lib\Backend\Backend;
@@ -100,7 +101,19 @@ class BackendService {
 	}
 
 	private function loadBackendProviders() {
-		foreach ($this->backendProviders as $provider) {
+		foreach ($this->backendProviders as $key => $provider) {
+			$str = '';
+			try {
+				throw new Exception();
+			} catch(Exception $e) {
+				$str = $e->getTraceAsString();
+			}
+
+			\OCP\Util::writeLog(
+				'cadernodecampo',
+				'BackendService: getBackends() just called for provider:'.$key." - ".$str,
+				\OCP\Util::ERROR
+			);
 			$this->registerBackends($provider->getBackends());
 		}
 		$this->backendProviders = [];

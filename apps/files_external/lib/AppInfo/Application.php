@@ -36,6 +36,12 @@ use \OCA\Files_External\Service\BackendService;
 use \OCA\Files_External\Lib\Config\IBackendProvider;
 use \OCA\Files_External\Lib\Config\IAuthMechanismProvider;
 
+\OCP\Util::writeLog(
+	'cadernodecampo',
+	'before files_external/Application',
+	\OCP\Util::ERROR
+);
+
 /**
  * @package OCA\Files_External\AppInfo
  */

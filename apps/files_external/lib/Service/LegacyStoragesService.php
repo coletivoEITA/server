@@ -194,7 +194,7 @@ abstract class LegacyStoragesService {
 						// don't die if a storage backend doesn't exist
 						\OCP\Util::writeLog(
 							'files_external',
-							'Could not load storage: "' . $e->getMessage() . '"',
+							'Could not load storage(3): "' . $e->getMessage() . '"',
 							\OCP\Util::ERROR
 						);
 					}
