@@ -101,6 +101,7 @@ class Application extends App implements IBackendProvider, IAuthMechanismProvide
 			$container->query('OCA\Files_External\Lib\Backend\SFTP_Key'),
 			$container->query('OCA\Files_External\Lib\Backend\SMB'),
 			$container->query('OCA\Files_External\Lib\Backend\SMB_OC'),
+			$container->query('OCA\Files_External\Lib\Backend\MatrixOrg'),
 		];
 
 		return $backends;
