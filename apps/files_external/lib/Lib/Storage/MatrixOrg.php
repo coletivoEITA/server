@@ -22,6 +22,15 @@
 
 namespace OCA\Files_External\Lib\Storage;
 
+use Icewind\Streams\IteratorDirectory;
+use Icewind\Streams\RetryWrapper;
+use OCA\CadernoDeCampo\Db\Room;
+use OCA\CadernoDeCampo\Db\RoomMapper;
+use OCA\Files_External\Lib\PersonalMount;
+use OCP\Files\StorageNotAvailableException;
+
+
+require_once \OC_App::getAppPath('files_external').'/3rdparty/matrixorg_php_client/autoload.php';
 
 class MatrixOrg extends \OC\Files\Storage\Common {
 
@@ -29,9 +38,21 @@ class MatrixOrg extends \OC\Files\Storage\Common {
 	private $user;
 	private $auth;
 	private $home_server;
+	private $api;
+	private $id;
+	private $metaData = array();
 
+
+	private function log($msg) {
+		\OCP\Util::writeLog(
+			'files_external',
+			$msg,
+			\OCP\Util::ERROR
+		);
+	}
 
 	public function __construct($params) {
+        $this->log("__construct");
 		if (!isset($params['user'])) {
 			throw new \UnexpectedValueException('no authentication parameters specified');
 		}
@@ -45,10 +66,9 @@ class MatrixOrg extends \OC\Files\Storage\Common {
 			throw new \UnexpectedValueException('no authentication parameters specified');
 		}
 
-
 		if (!empty($params['home_server']))
 		{
-			$this->id = 'matrixorg:' . $this->user . '@' . $params['home_server'] ;
+			$this->id = 'matrixorg:' . $params['home_server'] ;
 			$this->params = $params;
 
 		} else {
@@ -56,11 +76,94 @@ class MatrixOrg extends \OC\Files\Storage\Common {
 		}
 
 		$this->home_server = $params['home_server'];
-
-
-
-
+		$this->api = new \MatrixOrg_API($this->home_server);
+		//$this->api = new \MatrixOrg_API('http://localhost');
 	}
+
+	/**
+	 * Returns the path's metadata
+	 * @param string $path path for which to return the metadata
+	 * @param bool $list if true, also return the directory's contents
+	 * @return mixed directory contents if $list is true, file metadata if $list is
+	 * false, null if the file doesn't exist or "false" if the operation failed
+	 */
+	private function getMatrixOrgMetaData($path, $list = false) {
+		if (isset($this->metaData[$path])) {
+			return $this->metaData[$path][$list?'contents':'meta'];
+		}
+
+		//Root folder - gets a list of rooms
+		if (empty($path)) {
+			$this->metaData[$path] = $this->processMatrixSync($this->api->sync());
+		} else { //inside a Room - gets a list of attached files
+
+		}
+
+		if ($list) {
+			return $this->metaData[$path]['content'];
+		} else {
+			return array();
+		}
+	}
+
+
+	/**
+	 * Separates the file information from the sync
+	 * @param $sync - the result of a sync in Matrix.org server
+	 */
+	private function processMatrixSync($sync) {
+		//TODO should get also $sync['rooms']['invite']?
+		$rooms = $sync['rooms']['join'];
+
+		$folders = array(
+			'content' => array()
+		);
+
+		foreach ($rooms as $room_key => $room_info) {
+			$room_events = array_merge($room_info['state']['events'],$room_info['timeline']['events']);
+
+			$folder_info = array();
+
+			/*
+			Should get the room name and the user permissions: if the user can:
+			 * Write in the folder
+			 * Rename folder
+			 * Delete content in the folder (the folder can not be deleted by nextcloud)
+			*/
+
+			//Sort events
+			usort($room_events,function($a,$b) {
+				if ($a['origin_server_ts'] == $b['origin_server_ts']) return 0;
+				return ($a['origin_server_ts'] < $b['origin_server_ts']) ? -1 : 1;
+			});
+
+			//Get the room name - last m.room.name message
+			$i = 0;
+			for ($i = count($room_events)-1; $i>=0; $i--) {
+				if ($room_events[$i]['type'] == 'm.room.name') {
+					$folder_info['name'] = $room_events[$i]['content']['name'];
+					break;
+				}
+			}
+
+			$folders['content'][] = $folder_info;
+		}
+
+		return $folders;
+	}
+
+	//FIXME will try to connect just once. Treat the case to try again.
+	private function checkForConnection() {
+		if ($this->api->could_connect !== null) {
+			return $this->api->could_connect;
+		}
+
+		//If does not know if connected
+		$this->api->login($this->user,$this->auth);
+
+		return $this->api->could_connect;
+	}
+
 
 	/**
 	 * Get the identifier for the storage,
@@ -71,6 +174,7 @@ class MatrixOrg extends \OC\Files\Storage\Common {
 	 * @since 6.0.0
 	 */
 	public function getId() {
+        $this->log("getId");
 		return $this->id;
 	}
 
@@ -83,6 +187,7 @@ class MatrixOrg extends \OC\Files\Storage\Common {
 	 * @since 6.0.0
 	 */
 	public function mkdir($path) {
+        $this->log("mkdir");
 		// TODO: Implement mkdir() method.
 	}
 
@@ -94,6 +199,7 @@ class MatrixOrg extends \OC\Files\Storage\Common {
 	 * @since 6.0.0
 	 */
 	public function rmdir($path) {
+        $this->log("rmdir");
 		// TODO: Implement rmdir() method.
 	}
 
@@ -105,7 +211,15 @@ class MatrixOrg extends \OC\Files\Storage\Common {
 	 * @since 6.0.0
 	 */
 	public function opendir($path) {
-		// TODO: Implement opendir() method.
+		$contents = $this->getMatrixOrgMetaData($path,true);
+		if ($contents) {
+			$files = array();
+			foreach ($contents as $file) {
+				$files[] = $file['name'];
+			}
+			return IteratorDirectory::wrap($files);
+		}
+		return false;
 	}
 
 	/**
@@ -117,7 +231,8 @@ class MatrixOrg extends \OC\Files\Storage\Common {
 	 * @since 6.0.0
 	 */
 	public function stat($path) {
-		// TODO: Implement stat() method.
+		//TODO put the right value...
+		return array('mtime' => time() - 10, 'size' => 4096);
 	}
 
 	/**
@@ -128,8 +243,16 @@ class MatrixOrg extends \OC\Files\Storage\Common {
 	 * @since 6.0.0
 	 */
 	public function filetype($path) {
-		// TODO: Implement filetype() method.
+		$this->log('filetype:'.print_r($path,true));
+		if ($path == '' || $path == '/') { //Root folder
+			$this->log('dir');
+			return 'dir';
+		}
+		return 'file';
 	}
+
+
+
 
 	/**
 	 * see http://php.net/manual/en/function.file_exists.php
@@ -139,7 +262,20 @@ class MatrixOrg extends \OC\Files\Storage\Common {
 	 * @since 6.0.0
 	 */
 	public function file_exists($path) {
-		// TODO: Implement file_exists() method.
+		$this->log("file_exists ".$path);
+
+		if (!$this->checkForConnection()) {
+			$this->log('not connected');
+			return false;
+		}
+		if ($path == '' || $path == '/') { //Root folder
+			$this->log('dir');
+			return true;
+		}
+
+
+		// TODO: Implement the case where $path is not empty, i.e. a room folder
+		return true;
 	}
 
 	/**
@@ -150,6 +286,8 @@ class MatrixOrg extends \OC\Files\Storage\Common {
 	 * @since 6.0.0
 	 */
 	public function unlink($path) {
+        $this->log("unlink");
+		//redact
 		// TODO: Implement unlink() method.
 	}
 
@@ -162,7 +300,70 @@ class MatrixOrg extends \OC\Files\Storage\Common {
 	 * @since 6.0.0
 	 */
 	public function fopen($path, $mode) {
-		// TODO: Implement fopen() method.
+		$this->log("fopen path=".$path." mode=".$mode);
+		return false;
+		/*
+		switch ($mode) {
+			case 'r':
+			case 'rb':
+				try {
+					// slashes need to stay
+					$encodedPath = str_replace('%2F', '/', rawurlencode(trim($path, '/')));
+					$downloadUrl = 'https://api-content.dropbox.com/1/files/auto/' . $encodedPath;
+					$headers = $this->oauth->getOAuthHeader($downloadUrl, [], 'GET');
+
+					$client = \OC::$server->getHTTPClientService()->newClient();
+					try {
+						$response = $client->get($downloadUrl, [
+							'headers' => $headers,
+							'stream' => true,
+						]);
+					} catch (RequestException $e) {
+						if (!is_null($e->getResponse())) {
+							if ($e->getResponse()->getStatusCode() === 404) {
+								return false;
+							} else {
+								throw $e;
+							}
+						} else {
+							throw $e;
+						}
+					}
+
+					$handle = $response->getBody();
+					return RetryWrapper::wrap($handle);
+				} catch (\Exception $exception) {
+					\OCP\Util::writeLog('files_external', $exception->getMessage(), \OCP\Util::ERROR);
+					return false;
+				}
+			case 'w':
+			case 'wb':
+			case 'a':
+			case 'ab':
+			case 'r+':
+			case 'w+':
+			case 'wb+':
+			case 'a+':
+			case 'x':
+			case 'x+':
+			case 'c':
+			case 'c+':
+				if (strrpos($path, '.') !== false) {
+					$ext = substr($path, strrpos($path, '.'));
+				} else {
+					$ext = '';
+				}
+				$tmpFile = \OCP\Files::tmpFile($ext);
+				\OC\Files\Stream\Close::registerCallback($tmpFile, array($this, 'writeBack'));
+				if ($this->file_exists($path)) {
+					$source = $this->fopen($path, 'r');
+					file_put_contents($tmpFile, $source);
+				}
+				self::$tempFiles[$tmpFile] = $path;
+				return fopen('close://'.$tmpFile, $mode);
+		}
+		return false;
+		*/
 	}
 
 	/**
@@ -175,7 +376,8 @@ class MatrixOrg extends \OC\Files\Storage\Common {
 	 * @since 6.0.0
 	 */
 	public function touch($path, $mtime = null) {
-		// TODO: Implement touch() method.
+        $this->log("touch");
+		return false;
 	}
 
 	/**
@@ -184,65 +386,17 @@ class MatrixOrg extends \OC\Files\Storage\Common {
 	 * @return bool
 	 */
 	public function test() {
-		/*
-		#$url = $this->home_server.'/_matrix/client/r0/login';
-		$url='http://localhost/index.php';
-		$data = array('type' => 'm.login.password', 'user' => $this->user, 'password' => $this->auth);
+		$this->log("test");
 
-		// use key 'http' even if you send the request to https://...
-		$options = array(
-			'http' => array(
-				'header'  => "Content-type: application/json",
-				'method'  => 'POST',
-				'content' => http_build_query($data)
-			)
-		);
-		$context  = stream_context_create($options);
-		$result = file_get_contents($url, false, $context);
+		try {
+			$result =  $this->api->login($this->user,$this->auth);
+		} catch (\MatrixOrg_Exception_NetworkError $e) {
+			throw new StorageNotAvailableException('MatrixOrg network error', StorageNotAvailableException::STATUS_NETWORK_ERROR, $e);
+		} catch (\MatrixOrg_Exception_Timeout $e) {
+			throw new StorageNotAvailableException('MatrixOrg timeout error', StorageNotAvailableException::STATUS_TIMEOUT, $e);
+		}
 
-		\OCP\Util::writeLog(
-			'files_external',
-			'RESULT: '.print_r($result,true),
-			\OCP\Util::ERROR
-		);
-
-		if ($result === FALSE) { return false; }
-
-		return true;
-		*/
-
-		$url = $this->home_server.'/_matrix/client/r0/login';
-		$fields = array(
-			'type' => 'm.login.password',
-			'user' => $this->user,
-			'password' => $this->auth
-		);
-
-		//url-ify the data for the POST
-		$fields_string = http_build_query($fields);
-
-		//open connection
-		$ch = curl_init();
-
-		//set the url, number of POST vars, POST data
-		curl_setopt($ch,CURLOPT_URL,$url);
-		curl_setopt($ch,CURLOPT_POST,count($fields));
-		curl_setopt($ch,CURLOPT_POSTFIELDS,json_encode($fields));
-		curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
-		curl_setopt($ch,CURLOPT_HEADER,'Content-Type: application/json');
-
-		//execute post
-		$result = curl_exec($ch);
-
-		\OCP\Util::writeLog(
-			'files_external',
-			'RESULT: '.$result,
-			\OCP\Util::ERROR
-		);
-
-		if ($result === FALSE) { return false; }
-
-		return true;
-
+		return $result['status'] == 200;
 	}
+
 }
