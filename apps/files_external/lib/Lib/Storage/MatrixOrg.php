@@ -45,14 +45,14 @@ class MatrixOrg extends \OC\Files\Storage\Common {
 
 	private function log($msg) {
 		\OCP\Util::writeLog(
-			'files_external',
+			'matrixorg',
 			$msg,
 			\OCP\Util::ERROR
 		);
 	}
 
 	public function __construct($params) {
-        $this->log("__construct");
+        #$this->log("__construct");
 		if (!isset($params['user'])) {
 			throw new \UnexpectedValueException('no authentication parameters specified');
 		}
@@ -72,7 +72,7 @@ class MatrixOrg extends \OC\Files\Storage\Common {
 			$this->params = $params;
 
 		} else {
-			throw new \Exception('cadernodecampo: Creating \OC\Files\Storage\MatrixOrg storage failed');
+			throw new \Exception("$this->id: Creating \OC\Files\Storage\MatrixOrg storage failed");
 		}
 
 		$this->home_server = $params['home_server'];
@@ -152,16 +152,8 @@ class MatrixOrg extends \OC\Files\Storage\Common {
 		return $folders;
 	}
 
-	//FIXME will try to connect just once. Treat the case to try again.
-	private function checkForConnection() {
-		if ($this->api->could_connect !== null) {
-			return $this->api->could_connect;
-		}
-
-		//If does not know if connected
+	private function connect() {
 		$this->api->login($this->user,$this->auth);
-
-		return $this->api->could_connect;
 	}
 
 
@@ -174,7 +166,7 @@ class MatrixOrg extends \OC\Files\Storage\Common {
 	 * @since 6.0.0
 	 */
 	public function getId() {
-        $this->log("getId");
+        #$this->log("getId");
 		return $this->id;
 	}
 
@@ -232,6 +224,8 @@ class MatrixOrg extends \OC\Files\Storage\Common {
 	 */
 	public function stat($path) {
 		//TODO put the right value...
+		$this->log("stat");
+
 		return array('mtime' => time() - 10, 'size' => 4096);
 	}
 
@@ -264,7 +258,7 @@ class MatrixOrg extends \OC\Files\Storage\Common {
 	public function file_exists($path) {
 		$this->log("file_exists ".$path);
 
-		if (!$this->checkForConnection()) {
+		if (!$this->connect()) {
 			$this->log('not connected');
 			return false;
 		}
@@ -389,14 +383,13 @@ class MatrixOrg extends \OC\Files\Storage\Common {
 		$this->log("test");
 
 		try {
-			$result =  $this->api->login($this->user,$this->auth);
-		} catch (\MatrixOrg_Exception_NetworkError $e) {
-			throw new StorageNotAvailableException('MatrixOrg network error', StorageNotAvailableException::STATUS_NETWORK_ERROR, $e);
-		} catch (\MatrixOrg_Exception_Timeout $e) {
-			throw new StorageNotAvailableException('MatrixOrg timeout error', StorageNotAvailableException::STATUS_TIMEOUT, $e);
+			$this->connect();
+		} catch (\MatrixOrg_Exception $e) {
+			$this->log($e->getMessage());
+			return false;
 		}
 
-		return $result['status'] == 200;
+		return true;
 	}
 
 }

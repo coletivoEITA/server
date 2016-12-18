@@ -35,6 +35,7 @@ namespace OCA\Files_External\Lib\Storage;
 use Icewind\Streams\IteratorDirectory;
 
 use Icewind\Streams\RetryWrapper;
+use OCP\Lock\ILockingProvider;
 use phpseclib\Net\SFTP\Stream;
 
 /**
@@ -75,10 +76,19 @@ class SFTP extends \OC\Files\Storage\Common {
 		}
 	}
 
+	private function log($msg) {
+		\OCP\Util::writeLog(
+			'sftp',
+			$msg,
+			\OCP\Util::ERROR
+		);
+	}	
+	
 	/**
 	 * {@inheritdoc}
 	 */
 	public function __construct($params) {
+        #$this->log("__construct");
 		// Register sftp://
 		Stream::register();
 
@@ -119,6 +129,7 @@ class SFTP extends \OC\Files\Storage\Common {
 	 * @throws \Exception when the connection failed
 	 */
 	public function getConnection() {
+        #$this->log("getConnection");
 		if (!is_null($this->client)) {
 			return $this->client;
 		}
@@ -147,6 +158,7 @@ class SFTP extends \OC\Files\Storage\Common {
 	 * {@inheritdoc}
 	 */
 	public function test() {
+        $this->log("test");
 		if (
 			!isset($this->host)
 			|| !isset($this->user)
@@ -160,6 +172,7 @@ class SFTP extends \OC\Files\Storage\Common {
 	 * {@inheritdoc}
 	 */
 	public function getId(){
+        #$this->log("getId");
 		$id = 'sftp::' . $this->user . '@' . $this->host;
 		if ($this->port !== 22) {
 			$id .= ':' . $this->port;
@@ -175,6 +188,7 @@ class SFTP extends \OC\Files\Storage\Common {
 	 * @return string
 	 */
 	public function getHost() {
+        #$this->log("getHost");
 		return $this->host;
 	}
 
@@ -182,6 +196,7 @@ class SFTP extends \OC\Files\Storage\Common {
 	 * @return string
 	 */
 	public function getRoot() {
+        #$this->log("getRoot");
 		return $this->root;
 	}
 
@@ -189,6 +204,7 @@ class SFTP extends \OC\Files\Storage\Common {
 	 * @return mixed
 	 */
 	public function getUser() {
+        #$this->log("getUser");
 		return $this->user;
 	}
 
@@ -197,6 +213,7 @@ class SFTP extends \OC\Files\Storage\Common {
 	 * @return string
 	 */
 	private function absPath($path) {
+        #$this->log("absPath");
 		return $this->root . $this->cleanPath($path);
 	}
 
@@ -204,6 +221,7 @@ class SFTP extends \OC\Files\Storage\Common {
 	 * @return string|false
 	 */
 	private function hostKeysPath() {
+        #$this->log("hostKeysPath");
 		try {
 			$storage_view = \OCP\Files::getStorage('files_external');
 			if ($storage_view) {
@@ -221,6 +239,7 @@ class SFTP extends \OC\Files\Storage\Common {
 	 * @return bool
 	 */
 	protected function writeHostKeys($keys) {
+        #$this->log("writeHostKeys");
 		try {
 			$keyPath = $this->hostKeysPath();
 			if ($keyPath && file_exists($keyPath)) {
@@ -240,6 +259,7 @@ class SFTP extends \OC\Files\Storage\Common {
 	 * @return array
 	 */
 	protected function readHostKeys() {
+        #$this->log("readHostKeys");
 		try {
 			$keyPath = $this->hostKeysPath();
 			if (file_exists($keyPath)) {
@@ -266,6 +286,7 @@ class SFTP extends \OC\Files\Storage\Common {
 	 * {@inheritdoc}
 	 */
 	public function mkdir($path) {
+        $this->log("mkdir");
 		try {
 			return $this->getConnection()->mkdir($this->absPath($path));
 		} catch (\Exception $e) {
@@ -277,6 +298,7 @@ class SFTP extends \OC\Files\Storage\Common {
 	 * {@inheritdoc}
 	 */
 	public function rmdir($path) {
+        $this->log("rmdir");
 		try {
 			$result = $this->getConnection()->delete($this->absPath($path), true);
 			// workaround: stray stat cache entry when deleting empty folders
@@ -305,6 +327,7 @@ class SFTP extends \OC\Files\Storage\Common {
 					$dirStream[] = $file;
 				}
 			}
+			$this->log("opendir: return=".print_r($dirStream,true));
 			return IteratorDirectory::wrap($dirStream);
 		} catch(\Exception $e) {
 			return false;
@@ -318,10 +341,12 @@ class SFTP extends \OC\Files\Storage\Common {
 		try {
 			$stat = $this->getConnection()->stat($this->absPath($path));
 			if ($stat['type'] == NET_SFTP_TYPE_REGULAR) {
+				$this->log('filetype(file): '.print_r($path,true));
 				return 'file';
 			}
 
 			if ($stat['type'] == NET_SFTP_TYPE_DIRECTORY) {
+				$this->log('filetype(dir): '.print_r($path,true));
 				return 'dir';
 			}
 		} catch (\Exception $e) {
@@ -334,6 +359,7 @@ class SFTP extends \OC\Files\Storage\Common {
 	 * {@inheritdoc}
 	 */
 	public function file_exists($path) {
+		$this->log("file_exists ".$path);
 		try {
 			return $this->getConnection()->stat($this->absPath($path)) !== false;
 		} catch (\Exception $e) {
@@ -345,6 +371,7 @@ class SFTP extends \OC\Files\Storage\Common {
 	 * {@inheritdoc}
 	 */
 	public function unlink($path) {
+        $this->log("unlink");
 		try {
 			return $this->getConnection()->delete($this->absPath($path), true);
 		} catch (\Exception $e) {
@@ -356,6 +383,7 @@ class SFTP extends \OC\Files\Storage\Common {
 	 * {@inheritdoc}
 	 */
 	public function fopen($path, $mode) {
+        $this->log("fopen");
 		try {
 			$absPath = $this->absPath($path);
 			switch($mode) {
@@ -378,6 +406,8 @@ class SFTP extends \OC\Files\Storage\Common {
 				case 'c+':
 					$context = stream_context_create(array('sftp' => array('session' => $this->getConnection())));
 					$handle = fopen($this->constructUrl($path), $mode, false, $context);
+					$this->log("RESOURCE: ".print_r($handle,true));
+
 					return RetryWrapper::wrap($handle);
 			}
 		} catch (\Exception $e) {
@@ -389,6 +419,7 @@ class SFTP extends \OC\Files\Storage\Common {
 	 * {@inheritdoc}
 	 */
 	public function touch($path, $mtime=null) {
+        $this->log("touch");
 		try {
 			if (!is_null($mtime)) {
 				return false;
@@ -410,6 +441,7 @@ class SFTP extends \OC\Files\Storage\Common {
 	 * @throws \Exception
 	 */
 	public function getFile($path, $target) {
+        #$this->log("getFile");
 		$this->getConnection()->get($path, $target);
 	}
 
@@ -419,6 +451,7 @@ class SFTP extends \OC\Files\Storage\Common {
 	 * @throws \Exception
 	 */
 	public function uploadFile($path, $target) {
+        #$this->log("uploadFile");
 		$this->getConnection()->put($target, $path, NET_SFTP_LOCAL_FILE);
 	}
 
@@ -426,6 +459,7 @@ class SFTP extends \OC\Files\Storage\Common {
 	 * {@inheritdoc}
 	 */
 	public function rename($source, $target) {
+        $this->log("rename");
 		try {
 			if ($this->file_exists($target)) {
 				$this->unlink($target);
@@ -448,6 +482,7 @@ class SFTP extends \OC\Files\Storage\Common {
 
 			$mtime = $stat ? $stat['mtime'] : -1;
 			$size = $stat ? $stat['size'] : 0;
+			$this->log("stat path=$path mtime=$mtime size=$size");
 
 			return array('mtime' => $mtime, 'size' => $size, 'ctime' => -1);
 		} catch (\Exception $e) {
@@ -460,10 +495,360 @@ class SFTP extends \OC\Files\Storage\Common {
 	 * @return string
 	 */
 	public function constructUrl($path) {
+        #$this->log("constructUrl");
 		// Do not pass the password here. We want to use the Net_SFTP object
 		// supplied via stream context or fail. We only supply username and
 		// hostname because this might show up in logs (they are not used).
 		$url = 'sftp://' . urlencode($this->user) . '@' . $this->host . ':' . $this->port . $this->root . $path;
 		return $url;
+	}
+
+	/**
+	 * Remove a file or folder
+	 *
+	 * @param string $path
+	 * @return bool
+	 */
+	protected function remove($path) {
+        #$this->log("remove");
+		return parent::remove($path); // TODO: Change the autogenerated stub
+	}
+
+	public function is_dir($path) {
+        #$this->log("is_dir");
+		return parent::is_dir($path); // TODO: Change the autogenerated stub
+	}
+
+	public function is_file($path) {
+        #$this->log("is_file");
+		return parent::is_file($path); // TODO: Change the autogenerated stub
+	}
+
+	public function filesize($path) {
+        #$this->log("filesize");
+		return parent::filesize($path); // TODO: Change the autogenerated stub
+	}
+
+	public function isReadable($path) {
+        #$this->log("isReadable");
+		return parent::isReadable($path); // TODO: Change the autogenerated stub
+	}
+
+	public function isUpdatable($path) {
+        #$this->log("isUpdatable");
+		return parent::isUpdatable($path); // TODO: Change the autogenerated stub
+	}
+
+	public function isCreatable($path) {
+        #$this->log("isCreatable");
+		return parent::isCreatable($path); // TODO: Change the autogenerated stub
+	}
+
+	public function isDeletable($path) {
+        #$this->log("isDeletable");
+		return parent::isDeletable($path); // TODO: Change the autogenerated stub
+	}
+
+	public function isSharable($path) {
+        #$this->log("isSharable");
+		return parent::isSharable($path); // TODO: Change the autogenerated stub
+	}
+
+	public function getPermissions($path) {
+        #$this->log("getPermissions");
+		return parent::getPermissions($path); // TODO: Change the autogenerated stub
+	}
+
+	public function filemtime($path) {
+        #$this->log("filemtime");
+		return parent::filemtime($path); // TODO: Change the autogenerated stub
+	}
+
+	public function file_get_contents($path) {
+        #$this->log("file_get_contents");
+		return parent::file_get_contents($path); // TODO: Change the autogenerated stub
+	}
+
+	public function file_put_contents($path, $data) {
+        #$this->log("file_put_contents");
+		return parent::file_put_contents($path, $data); // TODO: Change the autogenerated stub
+	}
+
+	public function copy($path1, $path2) {
+        #$this->log("copy");
+		return parent::copy($path1, $path2); // TODO: Change the autogenerated stub
+	}
+
+	public function getMimeType($path) {
+        #$this->log("getMimeType");
+		return parent::getMimeType($path); // TODO: Change the autogenerated stub
+	}
+
+	public function hash($type, $path, $raw = false) {
+        #$this->log("hash");
+		return parent::hash($type, $path, $raw); // TODO: Change the autogenerated stub
+	}
+
+	public function search($query) {
+        #$this->log("search");
+		return parent::search($query); // TODO: Change the autogenerated stub
+	}
+
+	public function getLocalFile($path) {
+        #$this->log("getLocalFile");
+		return parent::getLocalFile($path); // TODO: Change the autogenerated stub
+	}
+
+	/**
+	 * @param string $query
+	 * @param string $dir
+	 * @return array
+	 */
+	protected function searchInDir($query, $dir = '') {
+        #$this->log("searchInDir");
+		return parent::searchInDir($query, $dir); // TODO: Change the autogenerated stub
+	}
+
+	/**
+	 * check if a file or folder has been updated since $time
+	 *
+	 * The method is only used to check if the cache needs to be updated. Storage backends that don't support checking
+	 * the mtime should always return false here. As a result storage implementations that always return false expect
+	 * exclusive access to the backend and will not pick up files that have been added in a way that circumvents
+	 * ownClouds filesystem.
+	 *
+	 * @param string $path
+	 * @param int $time
+	 * @return bool
+	 */
+	public function hasUpdated($path, $time) {
+        #$this->log("hasUpdated");
+		return parent::hasUpdated($path, $time); // TODO: Change the autogenerated stub
+	}
+
+	public function getCache($path = '', $storage = null) {
+        #$this->log("getCache");
+		return parent::getCache($path, $storage); // TODO: Change the autogenerated stub
+	}
+
+	public function getScanner($path = '', $storage = null) {
+        #$this->log("getScanner");
+		return parent::getScanner($path, $storage); // TODO: Change the autogenerated stub
+	}
+
+	public function getWatcher($path = '', $storage = null) {
+        #$this->log("getWatcher");
+		return parent::getWatcher($path, $storage); // TODO: Change the autogenerated stub
+	}
+
+	/**
+	 * get a propagator instance for the cache
+	 *
+	 * @param \OC\Files\Storage\Storage (optional) the storage to pass to the watcher
+	 * @return \OC\Files\Cache\Propagator
+	 */
+	public function getPropagator($storage = null) {
+        #$this->log("getPropagator");
+		return parent::getPropagator($storage); // TODO: Change the autogenerated stub
+	}
+
+	public function getUpdater($storage = null) {
+        #$this->log("getUpdater");
+		return parent::getUpdater($storage); // TODO: Change the autogenerated stub
+	}
+
+	public function getStorageCache($storage = null) {
+        #$this->log("getStorageCache");
+		return parent::getStorageCache($storage); // TODO: Change the autogenerated stub
+	}
+
+	/**
+	 * get the owner of a path
+	 *
+	 * @param string $path The path to get the owner
+	 * @return string|false uid or false
+	 */
+	public function getOwner($path) {
+        #$this->log("getOwner");
+		return parent::getOwner($path); // TODO: Change the autogenerated stub
+	}
+
+	/**
+	 * get the ETag for a file or folder
+	 *
+	 * @param string $path
+	 * @return string
+	 */
+	public function getETag($path) {
+        #$this->log("getETag");
+		return parent::getETag($path); // TODO: Change the autogenerated stub
+	}
+
+	/**
+	 * clean a path, i.e. remove all redundant '.' and '..'
+	 * making sure that it can't point to higher than '/'
+	 *
+	 * @param string $path The path to clean
+	 * @return string cleaned path
+	 */
+	public function cleanPath($path) {
+        #$this->log("cleanPath");
+		return parent::cleanPath($path); // TODO: Change the autogenerated stub
+	}
+
+	/**
+	 * get the free space in the storage
+	 *
+	 * @param string $path
+	 * @return int|false
+	 */
+	public function free_space($path) {
+        #$this->log("free_space");
+		return parent::free_space($path); // TODO: Change the autogenerated stub
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function isLocal() {
+        #$this->log("isLocal");
+		return parent::isLocal(); // TODO: Change the autogenerated stub
+	}
+
+	/**
+	 * Check if the storage is an instance of $class or is a wrapper for a storage that is an instance of $class
+	 *
+	 * @param string $class
+	 * @return bool
+	 */
+	public function instanceOfStorage($class) {
+        #$this->log("instanceOfStorage");
+		return parent::instanceOfStorage($class); // TODO: Change the autogenerated stub
+	}
+
+	/**
+	 * A custom storage implementation can return an url for direct download of a give file.
+	 *
+	 * For now the returned array can hold the parameter url - in future more attributes might follow.
+	 *
+	 * @param string $path
+	 * @return array|false
+	 */
+	public function getDirectDownload($path) {
+        #$this->log("getDirectDownload");
+		return parent::getDirectDownload($path); // TODO: Change the autogenerated stub
+	}
+
+	/**
+	 * @inheritdoc
+	 */
+	public function verifyPath($path, $fileName) {
+        #$this->log("verifyPath");
+		parent::verifyPath($path, $fileName); // TODO: Change the autogenerated stub
+	}
+
+	/**
+	 * @param string $fileName
+	 * @throws InvalidPathException
+	 */
+	protected function verifyPosixPath($fileName) {
+        #$this->log("verifyPosixPath");
+		parent::verifyPosixPath($fileName); // TODO: Change the autogenerated stub
+	}
+
+	/**
+	 * @param array $options
+	 */
+	public function setMountOptions(array $options) {
+        #$this->log("setMountOptions");
+		parent::setMountOptions($options); // TODO: Change the autogenerated stub
+	}
+
+	/**
+	 * @param string $name
+	 * @param mixed $default
+	 * @return mixed
+	 */
+	public function getMountOption($name, $default = null) {
+        #$this->log("getMountOption");
+		return parent::getMountOption($name, $default); // TODO: Change the autogenerated stub
+	}
+
+	/**
+	 * @param \OCP\Files\Storage $sourceStorage
+	 * @param string $sourceInternalPath
+	 * @param string $targetInternalPath
+	 * @param bool $preserveMtime
+	 * @return bool
+	 */
+	public function copyFromStorage(\OCP\Files\Storage $sourceStorage, $sourceInternalPath, $targetInternalPath, $preserveMtime = false) {
+        #$this->log("copyFromStorage");
+		return parent::copyFromStorage($sourceStorage, $sourceInternalPath, $targetInternalPath, $preserveMtime); // TODO: Change the autogenerated stub
+	}
+
+	/**
+	 * @param \OCP\Files\Storage $sourceStorage
+	 * @param string $sourceInternalPath
+	 * @param string $targetInternalPath
+	 * @return bool
+	 */
+	public function moveFromStorage(\OCP\Files\Storage $sourceStorage, $sourceInternalPath, $targetInternalPath) {
+        #$this->log("moveFromStorage");
+		return parent::moveFromStorage($sourceStorage, $sourceInternalPath, $targetInternalPath); // TODO: Change the autogenerated stub
+	}
+
+	/**
+	 * @inheritdoc
+	 */
+	public function getMetaData($path) {
+        #$this->log("getMetaData");
+		return parent::getMetaData($path); // TODO: Change the autogenerated stub
+	}
+
+	/**
+	 * @param string $path
+	 * @param int $type \OCP\Lock\ILockingProvider::LOCK_SHARED or \OCP\Lock\ILockingProvider::LOCK_EXCLUSIVE
+	 * @param \OCP\Lock\ILockingProvider $provider
+	 * @throws \OCP\Lock\LockedException
+	 */
+	public function acquireLock($path, $type, ILockingProvider $provider) {
+        #$this->log("acquireLock");
+		parent::acquireLock($path, $type, $provider); // TODO: Change the autogenerated stub
+	}
+
+	/**
+	 * @param string $path
+	 * @param int $type \OCP\Lock\ILockingProvider::LOCK_SHARED or \OCP\Lock\ILockingProvider::LOCK_EXCLUSIVE
+	 * @param \OCP\Lock\ILockingProvider $provider
+	 */
+	public function releaseLock($path, $type, ILockingProvider $provider) {
+        #$this->log("releaseLock");
+		parent::releaseLock($path, $type, $provider); // TODO: Change the autogenerated stub
+	}
+
+	/**
+	 * @param string $path
+	 * @param int $type \OCP\Lock\ILockingProvider::LOCK_SHARED or \OCP\Lock\ILockingProvider::LOCK_EXCLUSIVE
+	 * @param \OCP\Lock\ILockingProvider $provider
+	 */
+	public function changeLock($path, $type, ILockingProvider $provider) {
+        #$this->log("changeLock");
+		parent::changeLock($path, $type, $provider); // TODO: Change the autogenerated stub
+	}
+
+	/**
+	 * @return array [ available, last_checked ]
+	 */
+	public function getAvailability() {
+        #$this->log("getAvailability");
+		return parent::getAvailability(); // TODO: Change the autogenerated stub
+	}
+
+	/**
+	 * @param bool $isAvailable
+	 */
+	public function setAvailability($isAvailable) {
+        #$this->log("setAvailability");
+		parent::setAvailability($isAvailable); // TODO: Change the autogenerated stub
 	}
 }
