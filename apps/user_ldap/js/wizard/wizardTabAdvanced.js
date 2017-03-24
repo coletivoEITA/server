@@ -99,6 +99,10 @@ OCA = OCA || {};
 					$element: $('#ldap_turn_on_pwd_change'),
 					setMethod: 'setPasswordChangeEnabled'
 				},
+				ldap_skip_conflicting_objects: {
+					$element: $('#ldap_skip_conflicting_objects'),
+					setMethod: 'setSkipConflictingObjects'
+				},
 
 				//Special Attributes
 				ldap_quota_attr: {
@@ -301,6 +305,17 @@ OCA = OCA || {};
 		setPasswordChangeEnabled: function(doPasswordChange) {
 			this.setElementValue(
 				this.managedItems.ldap_turn_on_pwd_change.$element, doPasswordChange
+			);
+		},
+
+		/**
+		 * sets whether conflicting objects must be skipped
+		 *
+		 * @param {string} doSkipChange contains an int
+		 */
+		setSkipConflictingObjects: function(doSkipChange) {
+			this.setElementValue(
+				this.managedItems.ldap_skip_conflicting_objects.$element, doSkipChange
 			);
 		},
 

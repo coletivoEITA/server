@@ -92,6 +92,7 @@ class Configuration {
 		'ldapNestedGroups' => false,
 		'ldapPagingSize' => null,
 		'turnOnPasswordChange' => false,
+		'skipConflictingObjects' => false,
 		'ldapDynamicGroupMemberURL' => null,
 	);
 
@@ -452,6 +453,7 @@ class Configuration {
 			'ldap_nested_groups'                => 0,
 			'ldap_paging_size'                  => 500,
 			'ldap_turn_on_pwd_change'           => 0,
+			'ldap_skip_conflicting_objects'     => 0,
 			'ldap_experienced_admin'            => 0,
 			'ldap_dynamic_group_member_url'     => '',
 		);
@@ -509,6 +511,7 @@ class Configuration {
 			'ldap_nested_groups'                => 'ldapNestedGroups',
 			'ldap_paging_size'                  => 'ldapPagingSize',
 			'ldap_turn_on_pwd_change'           => 'turnOnPasswordChange',
+			'ldap_skip_conflicting_objects'     => 'skipConflictingObjects',
 			'ldap_experienced_admin'            => 'ldapExperiencedAdmin',
 			'ldap_dynamic_group_member_url'     => 'ldapDynamicGroupMemberURL',
 		);

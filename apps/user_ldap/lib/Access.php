@@ -478,14 +478,19 @@ class Access extends LDAPUtility implements IUserTools {
 		}
 		$this->connection->setConfiguration(array('ldapCacheTTL' => $originalTTL));
 
-		$altName = $this->createAltInternalOwnCloudName($intName, $isUser);
-		if(is_string($altName) && $mapper->map($fdn, $altName, $uuid)) {
-			return $altName;
-		}
+		if(intval($this->connection->skipConflictingObjects) === 1) {
+			\OCP\Util::writeLog('user_ldap', 'Skipping LDAP conflicting object '.$fdn.'.', \OCP\Util::INFO);
+			return false;
+		} else {
+			$altName = $this->createAltInternalOwnCloudName($intName, $isUser);
+			if(is_string($altName) && $mapper->map($fdn, $altName, $uuid)) {
+				return $altName;
+			}
 
-		//if everything else did not help..
-		\OCP\Util::writeLog('user_ldap', 'Could not create unique name for '.$fdn.'.', \OCP\Util::INFO);
-		return false;
+			//if everything else did not help..
+			\OCP\Util::writeLog('user_ldap', 'Could not create unique name for '.$fdn.'.', \OCP\Util::INFO);
+			return false;
+		}
 	}
 
 	/**
