@@ -116,7 +116,6 @@ interface ILDAPProvider {
 	 */
 	public function getLDAPDisplayNameField($uid);
 
-
 	/**
 	 * Get the LDAP attribute name for the email
 	 * @param string $uid user id
@@ -126,5 +125,5 @@ interface ILDAPProvider {
 	 */
 	public function getLDAPEmailField($uid);
 
+}
 
-	}
