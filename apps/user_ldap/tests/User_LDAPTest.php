@@ -10,6 +10,7 @@
  * @author Robin McCorkell <robin@mccorkell.me.uk>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  * @author Roger Szabo <roger.szabo@web.de>
+ * @author Vinicius Brand <vinicius@eita.org.br>
  *
  * @license AGPL-3.0
  *
