@@ -3,6 +3,10 @@
  *
  * @copyright Copyright (c) 2016, Roger Szabo (roger.szabo@web.de)
  *
+ * @author Roger Szabo <roger.szabo@web.de>
+ * @author Vinicius Brand <vinicius@eita.org.br>
+ * @author Daniel Tygel <dtygel@eita.org.br>
+ *
  * @license GNU AGPL version 3 or any later version
  *
  * This program is free software: you can redistribute it and/or modify
@@ -184,4 +188,31 @@ class LDAPProvider implements ILDAPProvider, IDeletionFlagSupport {
 	public function unflagRecord($uid) {
 		//do nothing
 	}
+
+	/**
+	 * Get the LDAP attribute name for the user's display name
+	 * @param string $uid user id
+	 * @return string the display name field
+	 * @throws \Exception if user id was not found in LDAP
+	 */
+	public function getLDAPDisplayNameField($uid) {
+		if(!$this->backend->userExists($uid)){
+			throw new \Exception('User id not found in LDAP');
+		}
+		return $this->backend->getLDAPAccess($uid)->getConnection()->getConfiguration()['ldap_display_name'];
+	}
+
+	/**
+	 * Get the LDAP attribute name for the email
+	 * @param string $uid user id
+	 * @return string the email field
+	 * @throws \Exception if user id was not found in LDAP
+	 */
+	public function getLDAPEmailField($uid) {
+		if(!$this->backend->userExists($uid)){
+			throw new \Exception('User id not found in LDAP');
+		}
+		return $this->backend->getLDAPAccess($uid)->getConnection()->getConfiguration()['ldap_email_attr'];
+	}
+
 }

@@ -10,6 +10,8 @@
  * @author Robin McCorkell <robin@mccorkell.me.uk>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  * @author Roger Szabo <roger.szabo@web.de>
+ * @author Vinicius Brand <vinicius@eita.org.br>
+ * @author Daniel Tygel <dtygel@eita.org.br>
  *
  * @license AGPL-3.0
  *
@@ -227,12 +229,23 @@ class User_Proxy extends Proxy implements \OCP\IUserBackend, \OCP\UserInterface,
 	}
 
 	/**
+	 * set display name of the user
+	 *
+	 * @param string $uid user ID of the user
+	 * @param string $displayName new display name
+	 * @return string display name
+	 */
+	public function setDisplayName($uid, $displayName) {
+		return $this->handleRequest($uid, 'setDisplayName', array($uid, $displayName));
+	}
+
+	/**
 	 * checks whether the user is allowed to change his avatar in Nextcloud
 	 * @param string $uid the Nextcloud user name
 	 * @return boolean either the user can or cannot
 	 */
 	public function canChangeAvatar($uid) {
-		return $this->handleRequest($uid, 'canChangeAvatar', array($uid), true);
+		return $this->handleRequest($uid, 'canChangeAvatar', array($uid));
 	}
 
 	/**
@@ -315,5 +328,15 @@ class User_Proxy extends Proxy implements \OCP\IUserBackend, \OCP\UserInterface,
 	 */
 	public function getNewLDAPConnection($uid) {
 		return $this->handleRequest($uid, 'getNewLDAPConnection', array($uid));
+	}
+
+	/**
+	 * Creates a new user in LDAP
+	 * @param $username
+	 * @param $password
+	 * @return bool
+	 */
+	public function createUser($username, $password) {
+		return $this->handleRequest($username, 'createUser', array($username,$password));
 	}
 }
