@@ -2,6 +2,9 @@
 /**
  * @copyright Copyright (c) 2016 Lukas Reschke <lukas@statuscode.ch>
  *
+ * @author Lukas Reschke <lukas@statuscode.ch>
+ * @author Vinicius Brand <vinicius@eita.org.br>
+ *
  * @license GNU AGPL version 3 or any later version
  *
  * This program is free software: you can redistribute it and/or modify
@@ -62,5 +65,24 @@ class User_ProxyTest extends TestCase  {
 			->willReturn(true);
 
 		$this->assertTrue($this->proxy->setPassword('MyUid', 'MyPassword'));
+	}
+
+	public function testSetDisplayName() {
+		$this->proxy
+			->expects($this->once())
+			->method('handleRequest')
+			->with('MyUid', 'setDisplayName', ['MyUid', 'MyPassword'])
+			->willReturn(true);
+
+		$this->assertTrue($this->proxy->setDisplayName('MyUid', 'MyPassword'));	}
+
+	public function testCreateUser() {
+		$this->proxy
+			->expects($this->once())
+			->method('handleRequest')
+			->with('MyUid', 'createUser', ['MyUid', 'MyPassword'])
+			->willReturn(true);
+
+		$this->assertTrue($this->proxy->createUser('MyUid', 'MyPassword'));
 	}
 }

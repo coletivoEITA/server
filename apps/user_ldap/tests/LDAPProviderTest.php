@@ -3,6 +3,9 @@
  *
  * @copyright Copyright (c) 2016, Roger Szabo (roger.szabo@web.de)
  *
+ * @author Roger Szabo <roger.szabo@web.de>
+ * @author Vinicius Brand <vinicius@eita.org.br>
+ *
  * @license GNU AGPL version 3 or any later version
  *
  * This program is free software: you can redistribute it and/or modify
@@ -335,4 +338,47 @@ class LDAPProviderTest extends \Test\TestCase {
 		$ldapProvider->unflagRecord('existing_user');
 		$this->assertTrue(TRUE);
 	}
+
+	public function testGetLDAPDisplayNameField() {
+		$backend = $this->getMockBuilder('OCA\User_LDAP\User_LDAP')
+			->setMethods(['userExists', 'getLDAPAccess', 'getConnection', 'getConfiguration'])
+			->disableOriginalConstructor()
+			->getMock();
+		$backend->expects($this->at(0))
+			->method('userExists')
+			->willReturn(true);
+		$backend->expects($this->at(3))
+			->method('getConfiguration')
+			->willReturn(array('ldap_display_name'=>'displayName'));
+		$backend->expects($this->any())
+			->method($this->anything())
+			->willReturnSelf();
+
+		$server = $this->getServerMock($backend);
+
+		$ldapProvider = $this->getLDAPProvider($server);
+		$this->assertEquals('displayName', $ldapProvider->getLDAPDisplayNameField('existing_user'));
+	}
+
+	public function testGetLDAPEmailField() {
+		$backend = $this->getMockBuilder('OCA\User_LDAP\User_LDAP')
+			->setMethods(['userExists', 'getLDAPAccess', 'getConnection', 'getConfiguration'])
+			->disableOriginalConstructor()
+			->getMock();
+		$backend->expects($this->at(0))
+			->method('userExists')
+			->willReturn(true);
+		$backend->expects($this->at(3))
+			->method('getConfiguration')
+			->willReturn(array('ldap_email_attr'=>'mail'));
+		$backend->expects($this->any())
+			->method($this->anything())
+			->willReturnSelf();
+
+		$server = $this->getServerMock($backend);
+
+		$ldapProvider = $this->getLDAPProvider($server);
+		$this->assertEquals('mail', $ldapProvider->getLDAPEmailField('existing_user'));
+	}
+
 }
