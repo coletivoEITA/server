@@ -125,4 +125,5 @@ interface ILDAPProvider {
 	 */
 	public function getLDAPEmailField($uid);
 
+
 }
