@@ -101,4 +101,5 @@ interface ILDAPPlugin {
 	 * @return int|bool
 	 */
 	public function countUsers();
+
 }
