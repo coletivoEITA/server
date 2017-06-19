@@ -68,6 +68,7 @@ class PluginManager {
 		foreach(self::$which as $action => $v) {
 			if ((bool)($respondToActions & $action)) {
 				self::$which[$action] = $plugin;
+				\OC::$server->getLogger()->debug("Registered action ".$action." to plugin ".$plugin, ['app' => 'user_ldap']);
 			}
 		}
 		if (method_exists($plugin,'deleteUser')) {
@@ -75,7 +76,7 @@ class PluginManager {
 		}
 	}
 
-	public static function implementsActions($actions){
+	public static function implementsActions($actions) {
 		return (bool) ($actions & self::$respondToActions);
 	}
 
@@ -177,6 +178,4 @@ class PluginManager {
 		}
 		return false;
 	}
-
-
 }
