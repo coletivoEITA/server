@@ -29,8 +29,6 @@
  *
  */
 
-use OCA\User_LDAP\PluginManager;
-
 $helper = new \OCA\User_LDAP\Helper(\OC::$server->getConfig());
 $configPrefixes = $helper->getServerConfigurationPrefixes(true);
 if(count($configPrefixes) > 0) {
@@ -64,8 +62,9 @@ if(count($configPrefixes) > 0) {
 	$groupBackend  = new OCA\User_LDAP\Group_Proxy($configPrefixes, $ldapWrapper, $groupPluginManager);
 	// register user backend
 	OC_User::useBackend($userBackend);
+
 	// Hook to allow plugins to work on registered backends
-	\OC_Hook::emit('\OCA\User_LDAP\User\User','postLDAPBackendAdded');
+	OC::$server->getEventDispatcher()->dispatch('OCA\\User_LDAP\\User\\User::postLDAPBackendAdded');
 
 	\OC::$server->getGroupManager()->addBackend($groupBackend);
 }

@@ -62,7 +62,6 @@ class UserPluginManager {
 		}
 	}
 
-	public static function implementsActions($actions){
 	public function implementsActions($actions) {
 		return (bool) ($actions & $this->respondToActions);
 	}
@@ -165,6 +164,5 @@ class UserPluginManager {
 		}
 		return false;
 	}
-
-
 }
+

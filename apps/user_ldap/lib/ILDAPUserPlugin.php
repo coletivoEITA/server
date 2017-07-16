@@ -101,4 +101,5 @@ interface ILDAPUserPlugin {
 	 * @return int|bool
 	 */
 	public function countUsers();
+
 }

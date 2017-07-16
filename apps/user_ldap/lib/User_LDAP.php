@@ -159,10 +159,6 @@ class User_LDAP extends BackendUtility implements \OCP\IUserBackend, \OCP\UserIn
 	 * @return false|string
 	 */
 	public function checkPassword($uid, $password) {
-		if (PluginManager::implementsActions(Backend::CHECK_PASSWORD)) {
-			return PluginManager::checkPassword($uid, $password);
-		}
-
 		try {
 			$ldapRecord = $this->getLDAPUserByLoginName($uid);
 		} catch(NotOnLDAP $e) {
@@ -610,4 +606,5 @@ class User_LDAP extends BackendUtility implements \OCP\IUserBackend, \OCP\UserIn
 		}
 		return false;
 	}
+
 }
