@@ -2116,10 +2116,12 @@ describe('OCA.Files.FileList tests', function() {
 			beforeEach(function() {
 				addTabStub = sinon.stub(OCA.Files.DetailsView.prototype, 'addTabView');
 				addDetailStub = sinon.stub(OCA.Files.DetailsView.prototype, 'addDetailView');
+				getDetailsStub = sinon.stub(OCA.Files.DetailsView.prototype, 'getDetailViews');
 			});
 			afterEach(function() {
 				addTabStub.restore();
 				addDetailStub.restore();
+				getDetailsStub.restore();
 			});
 			it('forward the registered views to the underlying DetailsView', function() {
 				fileList.destroy();
@@ -2133,6 +2135,19 @@ describe('OCA.Files.FileList tests', function() {
 				// twice because the filelist already registers one by default
 				expect(addDetailStub.calledTwice).toEqual(true);
 			});
+			it('forward getting the registered views to the underlying DetailsView', function() {
+				fileList.destroy();
+				fileList = new OCA.Files.FileList($('#app-content-files'), {
+					detailsViewEnabled: true
+				});
+				var expectedRegisteredDetailsView = [];
+				getDetailsStub.returns(expectedRegisteredDetailsView);
+
+				var registeredDetailViews = fileList.getRegisteredDetailViews();
+
+				expect(getDetailsStub.calledOnce).toEqual(true);
+				expect(registeredDetailViews).toEqual(expectedRegisteredDetailsView);
+			});
 			it('does not error when registering panels when not details view configured', function() {
 				fileList.destroy();
 				fileList = new OCA.Files.FileList($('#app-content-files'), {
@@ -2143,6 +2158,17 @@ describe('OCA.Files.FileList tests', function() {
 
 				expect(addTabStub.notCalled).toEqual(true);
 				expect(addDetailStub.notCalled).toEqual(true);
+			});
+			it('returns null when getting the registered views when not details view configured', function() {
+				fileList.destroy();
+				fileList = new OCA.Files.FileList($('#app-content-files'), {
+					detailsViewEnabled: false
+				});
+
+				var registeredDetailViews = fileList.getRegisteredDetailViews();
+
+				expect(getDetailsStub.notCalled).toEqual(true);
+				expect(registeredDetailViews).toBeNull();
 			});
 		});
 		it('triggers file action when clicking on row if no details view configured', function() {
@@ -2450,6 +2476,120 @@ describe('OCA.Files.FileList tests', function() {
 
 			sortStub.restore();
 		});
+		describe('with favorites', function() {
+			it('shows favorite files on top', function() {
+				testFiles.push(new FileInfo({
+					id: 5,
+					type: 'file',
+					name: 'ZZY Before last file in ascending order',
+					mimetype: 'text/plain',
+					mtime: 999999998,
+					size: 9999998,
+					// Tags would be added by TagsPlugin
+					tags: [OC.TAG_FAVORITE],
+				}), new FileInfo({
+					id: 6,
+					type: 'file',
+					name: 'ZZZ Last file in ascending order',
+					mimetype: 'text/plain',
+					mtime: 999999999,
+					size: 9999999,
+					// Tags would be added by TagsPlugin
+					tags: [OC.TAG_FAVORITE],
+				}));
+
+				fileList.setFiles(testFiles);
+
+				// Sort by name in ascending order (default sorting is by name
+				// in ascending order, but setFiles does not trigger a sort, so
+				// the files must be sorted before being set or a sort must be
+				// triggered afterwards by clicking on the header).
+				fileList.$el.find('.column-name .columntitle').click();
+				fileList.$el.find('.column-name .columntitle').click();
+
+				expect(fileList.findFileEl('ZZY Before last file in ascending order').index()).toEqual(0);
+				expect(fileList.findFileEl('ZZZ Last file in ascending order').index()).toEqual(1);
+				expect(fileList.findFileEl('somedir').index()).toEqual(2);
+				expect(fileList.findFileEl('One.txt').index()).toEqual(3);
+				expect(fileList.findFileEl('Three.pdf').index()).toEqual(4);
+				expect(fileList.findFileEl('Two.jpg').index()).toEqual(5);
+
+				// Sort by size in ascending order
+				fileList.$el.find('.column-size .columntitle').click();
+				fileList.$el.find('.column-size .columntitle').click();
+
+				expect(fileList.findFileEl('ZZY Before last file in ascending order').index()).toEqual(0);
+				expect(fileList.findFileEl('ZZZ Last file in ascending order').index()).toEqual(1);
+				expect(fileList.findFileEl('One.txt').index()).toEqual(2);
+				expect(fileList.findFileEl('somedir').index()).toEqual(3);
+				expect(fileList.findFileEl('Two.jpg').index()).toEqual(4);
+				expect(fileList.findFileEl('Three.pdf').index()).toEqual(5);
+
+				// Sort by modification time in ascending order
+				fileList.$el.find('.column-mtime .columntitle').click();
+				fileList.$el.find('.column-mtime .columntitle').click();
+
+				expect(fileList.findFileEl('ZZY Before last file in ascending order').index()).toEqual(0);
+				expect(fileList.findFileEl('ZZZ Last file in ascending order').index()).toEqual(1);
+				expect(fileList.findFileEl('One.txt').index()).toEqual(2);
+				expect(fileList.findFileEl('somedir').index()).toEqual(3);
+				expect(fileList.findFileEl('Three.pdf').index()).toEqual(4);
+				expect(fileList.findFileEl('Two.jpg').index()).toEqual(5);
+			});
+			it('shows favorite files on top also when using descending order', function() {
+				testFiles.push(new FileInfo({
+					id: 5,
+					type: 'file',
+					name: 'AAB Before last file in descending order',
+					mimetype: 'text/plain',
+					mtime: 2,
+					size: 2,
+					// Tags would be added by TagsPlugin
+					tags: [OC.TAG_FAVORITE],
+				}), new FileInfo({
+					id: 6,
+					type: 'file',
+					name: 'AAA Last file in descending order',
+					mimetype: 'text/plain',
+					mtime: 1,
+					size: 1,
+					// Tags would be added by TagsPlugin
+					tags: [OC.TAG_FAVORITE],
+				}));
+
+				fileList.setFiles(testFiles);
+
+				// Sort by name in descending order
+				fileList.$el.find('.column-name .columntitle').click();
+
+				expect(fileList.findFileEl('AAB Before last file in descending order').index()).toEqual(0);
+				expect(fileList.findFileEl('AAA Last file in descending order').index()).toEqual(1);
+				expect(fileList.findFileEl('Two.jpg').index()).toEqual(2);
+				expect(fileList.findFileEl('Three.pdf').index()).toEqual(3);
+				expect(fileList.findFileEl('One.txt').index()).toEqual(4);
+				expect(fileList.findFileEl('somedir').index()).toEqual(5);
+
+				// Sort by size in descending order
+				fileList.$el.find('.column-size .columntitle').click();
+
+				expect(fileList.findFileEl('AAB Before last file in descending order').index()).toEqual(0);
+				expect(fileList.findFileEl('AAA Last file in descending order').index()).toEqual(1);
+				expect(fileList.findFileEl('Three.pdf').index()).toEqual(2);
+				expect(fileList.findFileEl('Two.jpg').index()).toEqual(3);
+				expect(fileList.findFileEl('somedir').index()).toEqual(4);
+				expect(fileList.findFileEl('One.txt').index()).toEqual(5);
+
+				// Sort by modification time in descending order
+				fileList.$el.find('.column-mtime .columntitle').click();
+
+				expect(fileList.findFileEl('AAB Before last file in descending order').index()).toEqual(0);
+				expect(fileList.findFileEl('AAA Last file in descending order').index()).toEqual(1);
+				expect(fileList.findFileEl('Two.jpg').index()).toEqual(2);
+				expect(fileList.findFileEl('Three.pdf').index()).toEqual(3);
+				expect(fileList.findFileEl('somedir').index()).toEqual(4);
+				expect(fileList.findFileEl('One.txt').index()).toEqual(5);
+			});
+		});
 	});
 	describe('create file', function() {
 		var deferredCreate;
@@ -2668,22 +2808,24 @@ describe('OCA.Files.FileList tests', function() {
 				var eventData = {
 					delegatedEvent: {
 						target: $target
+					},
+					preventDefault: function () {
 					}
 				};
 				uploader.trigger('drop', eventData, data || {});
 				return !!data.targetDir;
 			}
 
-			it('drop on a tr or crumb outside file list does not trigger upload', function() {
-				var $anotherTable = $('<table><tbody><tr><td>outside<div class="crumb">crumb</div></td></tr></table>');
-				var ev;
-				$('#testArea').append($anotherTable);
-				ev = dropOn($anotherTable.find('tr'), uploadData);
-				expect(ev).toEqual(false);
+				it('drop on a tr or crumb outside file list does not trigger upload', function() {
+					var $anotherTable = $('<table><tbody><tr><td>outside<div class="crumb">crumb</div></td></tr></table>');
+					var ev;
+					$('#testArea').append($anotherTable);
+					ev = dropOn($anotherTable.find('tr'), uploadData);
+					expect(ev).toEqual(false);
 
-				ev = dropOn($anotherTable.find('.crumb'), uploadData);
-				expect(ev).toEqual(false);
-			});
+					ev = dropOn($anotherTable.find('.crumb'), uploadData);
+					expect(ev).toEqual(false);
+				});
 			it('drop on an element outside file list container does not trigger upload', function() {
 				var $anotherEl = $('<div>outside</div>');
 				var ev;

@@ -21,12 +21,7 @@
 		<link rel="apple-touch-icon-precomposed" href="<?php print_unescaped(image_path($_['appid'], 'favicon-touch.png')); ?>">
 		<link rel="mask-icon" sizes="any" href="<?php print_unescaped(image_path($_['appid'], 'favicon-mask.svg')); ?>" color="<?php p($theme->getColorPrimary()); ?>">
 		<link rel="manifest" href="<?php print_unescaped(image_path($_['appid'], 'manifest.json')); ?>">
-		<?php foreach($_['cssfiles'] as $cssfile): ?>
-			<link rel="stylesheet" href="<?php print_unescaped($cssfile); ?>">
-		<?php endforeach; ?>
-		<?php foreach($_['printcssfiles'] as $cssfile): ?>
-			<link rel="stylesheet" href="<?php print_unescaped($cssfile); ?>" media="print">
-		<?php endforeach; ?>
+		<?php emit_css_loading_tags($_); ?>
 		<?php emit_script_loading_tags($_); ?>
 		<?php print_unescaped($_['headers']); ?>
 	</head>
@@ -39,7 +34,7 @@
 			<div id="header-left">
 				<a href="<?php print_unescaped(link_to('', 'index.php')); ?>"
 					id="nextcloud" tabindex="1">
-					<div class="logo-icon">
+					<div class="logo logo-icon">
 						<h1 class="hidden-visually">
 							<?php p($theme->getName()); ?>
 						</h1>
@@ -63,10 +58,10 @@
 									 class="app-icon"/>
 								<div class="icon-loading-small-dark"
 									 style="display:none;"></div>
-								<span>
+							</a>
+							<span>
 								<?php p($entry['name']); ?>
 							</span>
-							</a>
 						</li>
 					<?php endforeach; ?>
 					<li id="more-apps" class="menutoggle">

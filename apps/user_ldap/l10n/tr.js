@@ -128,7 +128,6 @@ OC.L10N.register(
     "Groups" : "Gruplar",
     "Expert" : "Uzman",
     "Advanced" : "Gelişmiş",
-    "<b>Warning:</b> Apps user_ldap and user_webdavauth are incompatible. You may experience unexpected behavior. Please ask your system administrator to disable one of them." : "<b>Uyarı:</b> user_ldap ve user_webdavauth uygulamaları uyumlu değil. Beklenmedik bir davranışla karşılaşabilirsiniz. Lütfen ikisinden birini devre dışı bırakmak için sistem yöneticinizle görüşün.",
     "<b>Warning:</b> The PHP LDAP module is not installed, the backend will not work. Please ask your system administrator to install it." : "<b>Uyarı:</b> PHP LDAP modülü kurulmamış, arka uç çalışmayacak. Lütfen kurulumu için sistem yöneticinizle görüşün.",
     "Connection Settings" : "Bağlantı Ayarları",
     "Configuration Active" : "Yapılandırma Etkin",
@@ -139,7 +138,7 @@ OC.L10N.register(
     "Disable Main Server" : "Ana Sunucuyu Devre Dışı Bırak",
     "Only connect to the replica server." : "Yalnız yedek sunucuya bağlanılsın.",
     "Turn off SSL certificate validation." : "SSL sertifika doğrulaması kullanılmasın.",
-    "Not recommended, use it for testing only! If connection only works with this option, import the LDAP server's SSL certificate in your %s server." : "Önerilmez, yalnız deneme amacıyla için kullanın! Bağlantı yalnız bu seçenek etkinleştirildiğinde çalışıyorsa %s sunucunuza LDAP sunucusunun SSL sertifikasını ekleyin.",
+    "Not recommended, use it for testing only! If connection only works with this option, import the LDAP server's SSL certificate in your %s server." : "Önerilmez, yalnız deneme amacıyla için kullanın! Bağlantı yalnız bu seçenek etkinleştirildiğinde çalışıyorsa LDAP sunucusunun SSL sertifikasını %s sunucuzun içine aktarın.",
     "Cache Time-To-Live" : "Ön Bellek Time-To-Live Değeri",
     "in seconds. A change empties the cache." : "saniye cinsinden. Değişiklik ön belleği temizler.",
     "Directory Settings" : "Dizin Ayarları",
@@ -193,6 +192,7 @@ OC.L10N.register(
     "Allows login against the LDAP / AD username, which is either uid or samaccountname and will be detected." : "LDAP / AD kullanıcı adı ile oturum açılmasını sağlar. Kullanıcı adı uid ya da samaccountname olabilir ve algılanır.",
     "Add a new and blank configuration" : "Yeni ve boş bir yapılandırma ekle",
     "You can omit the protocol, except you require SSL. Then start with ldaps://" : "SSL gerekmiyorsa iletişim kuralı belirtilmeyebilir. Gerekiyorsa ldaps:// ile başlayın",
+    "<b>Warning:</b> Apps user_ldap and user_webdavauth are incompatible. You may experience unexpected behavior. Please ask your system administrator to disable one of them." : "<b>Uyarı:</b> user_ldap ve user_webdavauth uygulamaları uyumlu değil. Beklenmedik bir davranışla karşılaşabilirsiniz. Lütfen ikisinden birini devre dışı bırakmak için sistem yöneticinizle görüşün.",
     "in bytes" : "bayt cinsinden"
 },
 "nplurals=2; plural=(n > 1);");

@@ -42,6 +42,7 @@
 namespace OC;
 
 use bantu\IniGetWrapper\IniGetWrapper;
+use OC\Accounts\AccountManager;
 use OC\App\AppManager;
 use OC\App\AppStore\Bundles\BundleFetcher;
 use OC\App\AppStore\Fetcher\AppFetcher;
@@ -414,9 +415,11 @@ class Server extends ServerContainer implements IServerContainer {
 		$this->registerService(\OCP\IURLGenerator::class, function (Server $c) {
 			$config = $c->getConfig();
 			$cacheFactory = $c->getMemCacheFactory();
+			$request = $c->getRequest();
 			return new \OC\URLGenerator(
 				$config,
-				$cacheFactory
+				$cacheFactory,
+				$request
 			);
 		});
 		$this->registerAlias('URLGenerator', \OCP\IURLGenerator::class);
@@ -433,27 +436,31 @@ class Server extends ServerContainer implements IServerContainer {
 		$this->registerAlias('UserCache', \OCP\ICache::class);
 
 		$this->registerService(Factory::class, function (Server $c) {
+
+			$arrayCacheFactory = new \OC\Memcache\Factory('', $c->getLogger(),
+				'\\OC\\Memcache\\ArrayCache',
+				'\\OC\\Memcache\\ArrayCache',
+				'\\OC\\Memcache\\ArrayCache'
+			);
 			$config = $c->getConfig();
+			$request = $c->getRequest();
+			$urlGenerator = new URLGenerator($config, $arrayCacheFactory, $request);
 
 			if ($config->getSystemValue('installed', false) && !(defined('PHPUNIT_RUN') && PHPUNIT_RUN)) {
 				$v = \OC_App::getAppVersions();
-				$v['core'] = md5(file_get_contents(\OC::$SERVERROOT . '/version.php'));
+				$v['core'] = implode(',', \OC_Util::getVersion());
 				$version = implode(',', $v);
 				$instanceId = \OC_Util::getInstanceId();
 				$path = \OC::$SERVERROOT;
-				$prefix = md5($instanceId . '-' . $version . '-' . $path . '-' . \OC::$WEBROOT);
+				$prefix = md5($instanceId . '-' . $version . '-' . $path . '-' . $urlGenerator->getBaseUrl());
 				return new \OC\Memcache\Factory($prefix, $c->getLogger(),
 					$config->getSystemValue('memcache.local', null),
 					$config->getSystemValue('memcache.distributed', null),
 					$config->getSystemValue('memcache.locking', null)
 				);
 			}
+			return $arrayCacheFactory;
 
-			return new \OC\Memcache\Factory('', $c->getLogger(),
-				'\\OC\\Memcache\\ArrayCache',
-				'\\OC\\Memcache\\ArrayCache',
-				'\\OC\\Memcache\\ArrayCache'
-			);
 		});
 		$this->registerAlias('MemCacheFactory', Factory::class);
 		$this->registerAlias(ICacheFactory::class, Factory::class);
@@ -589,7 +596,13 @@ class Server extends ServerContainer implements IServerContainer {
 			$uid = $user ? $user : null;
 			return new ClientService(
 				$c->getConfig(),
-				new \OC\Security\CertificateManager($uid, new View(), $c->getConfig(), $c->getLogger())
+				new \OC\Security\CertificateManager(
+					$uid,
+					new View(),
+					$c->getConfig(),
+					$c->getLogger(),
+					$c->getSecureRandom()
+				)
 			);
 		});
 		$this->registerAlias('HttpClientService', \OCP\Http\Client\IClientService::class);
@@ -823,6 +836,9 @@ class Server extends ServerContainer implements IServerContainer {
 			$manager->registerCapability(function () use ($c) {
 				return new \OC\OCS\CoreCapabilities($c->getConfig());
 			});
+			$manager->registerCapability(function () use ($c) {
+				return $c->query(\OC\Security\Bruteforce\Capabilities::class);
+			});
 			return $manager;
 		});
 		$this->registerAlias('CapabilitiesManager', \OC\CapabilitiesManager::class);
@@ -964,7 +980,12 @@ class Server extends ServerContainer implements IServerContainer {
 				$c->getLockingProvider(),
 				$c->getRequest(),
 				new \OC\Settings\Mapper($c->getDatabaseConnection()),
-				$c->getURLGenerator()
+				$c->getURLGenerator(),
+				$c->query(AccountManager::class),
+				$c->getGroupManager(),
+				$c->getL10NFactory(),
+				$c->getThemingDefaults(),
+				$c->getAppManager()
 			);
 			return $manager;
 		});
@@ -1426,7 +1447,13 @@ class Server extends ServerContainer implements IServerContainer {
 			}
 			$userId = $user->getUID();
 		}
-		return new CertificateManager($userId, new View(), $this->getConfig(), $this->getLogger());
+		return new CertificateManager(
+			$userId,
+			new View(),
+			$this->getConfig(),
+			$this->getLogger(),
+			$this->getSecureRandom()
+		);
 	}
 
 	/**
