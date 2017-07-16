@@ -34,11 +34,11 @@ class Group_Proxy extends Proxy implements \OCP\GroupInterface {
 	 * Constructor
 	 * @param string[] $serverConfigPrefixes array containing the config Prefixes
 	 */
-	public function __construct($serverConfigPrefixes, ILDAPWrapper $ldap) {
+	public function __construct($serverConfigPrefixes, ILDAPWrapper $ldap, GroupPluginManager $groupPluginManager) {
 		parent::__construct($ldap);
 		foreach($serverConfigPrefixes as $configPrefix) {
 			$this->backends[$configPrefix] =
-				new \OCA\User_LDAP\Group_LDAP($this->getAccess($configPrefix));
+				new \OCA\User_LDAP\Group_LDAP($this->getAccess($configPrefix), $groupPluginManager);
 			if(is_null($this->refBackend)) {
 				$this->refBackend = &$this->backends[$configPrefix];
 			}
@@ -146,6 +146,51 @@ class Group_Proxy extends Proxy implements \OCP\GroupInterface {
 	}
 
 	/**
+	 * @param string $gid
+	 * @return \OCP\IGroup
+	 */
+	public function createGroup($gid) {
+		return $this->handleRequest(
+			$gid, 'createGroup', array($gid));
+	}
+
+	/**
+	 * delete a group
+	 * @param string $gid gid of the group to delete
+	 * @return bool
+	 */
+	public function deleteGroup($gid) {
+		return $this->handleRequest(
+			$gid, 'deleteGroup', array($gid));
+	}
+
+	/**
+	 * Add a user to a group
+	 * @param string $uid Name of the user to add to group
+	 * @param string $gid Name of the group in which add the user
+	 * @return bool
+	 *
+	 * Adds a user to a group.
+	 */
+	public function addToGroup($uid, $gid) {
+		return $this->handleRequest(
+			$gid, 'addToGroup', array($uid, $gid));
+	}
+
+	/**
+	 * Removes a user from a group
+	 * @param string $uid Name of the user to remove from group
+	 * @param string $gid Name of the group from which remove the user
+	 * @return bool
+	 *
+	 * removes the user from a group.
+	 */
+	public function removeFromGroup($uid, $gid) {
+		return $this->handleRequest(
+			$gid, 'removeFromGroup', array($uid, $gid));
+	}
+
+	/**
 	 * returns the number of users in a group, who match the search term
 	 * @param string $gid the internal group name
 	 * @param string $search optional, a search string
@@ -154,6 +199,16 @@ class Group_Proxy extends Proxy implements \OCP\GroupInterface {
 	public function countUsersInGroup($gid, $search = '') {
 		return $this->handleRequest(
 			$gid, 'countUsersInGroup', array($gid, $search));
+	}
+
+	/**
+	 * get an array with group details
+	 * @param string $gid
+	 * @return array|false
+	 */
+	public function getGroupDetails($gid) {
+		return $this->handleRequest(
+			$gid, 'getGroupDetails', array($gid));
 	}
 
 	/**

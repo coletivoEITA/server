@@ -56,15 +56,19 @@ class User_LDAP extends BackendUtility implements \OCP\IUserBackend, \OCP\UserIn
 	/** @var INotificationManager */
 	protected $notificationManager;
 
+	/** @var UserPluginManager */
+	protected $userPluginManager;
+
 	/**
 	 * @param Access $access
 	 * @param \OCP\IConfig $ocConfig
 	 * @param \OCP\Notification\IManager $notificationManager
 	 */
-	public function __construct(Access $access, IConfig $ocConfig, INotificationManager $notificationManager) {
+	public function __construct(Access $access, IConfig $ocConfig, INotificationManager $notificationManager, UserPluginManager $userPluginManager) {
 		parent::__construct($access);
 		$this->ocConfig = $ocConfig;
 		$this->notificationManager = $notificationManager;
+		$this->userPluginManager = $userPluginManager;
 	}
 
 	/**
@@ -73,8 +77,8 @@ class User_LDAP extends BackendUtility implements \OCP\IUserBackend, \OCP\UserIn
 	 * @return boolean either the user can or cannot
 	 */
 	public function canChangeAvatar($uid) {
-		if (PluginManager::implementsActions(Backend::PROVIDE_AVATAR)) {
-			return PluginManager::canChangeAvatar($uid);
+		if ($this->userPluginManager->implementsActions(Backend::PROVIDE_AVATAR)) {
+			return $this->userPluginManager->canChangeAvatar($uid);
 		}
 
 		$user = $this->access->userManager->get($uid);
@@ -200,8 +204,8 @@ class User_LDAP extends BackendUtility implements \OCP\IUserBackend, \OCP\UserIn
 	 * @return bool
 	 */
 	public function setPassword($uid, $password) {
-		if (PluginManager::implementsActions(Backend::SET_PASSWORD)) {
-			return PluginManager::setPassword($uid, $password);
+		if ($this->userPluginManager->implementsActions(Backend::SET_PASSWORD)) {
+			return $this->userPluginManager->setPassword($uid, $password);
 		}
 
 		$user = $this->access->userManager->get($uid);
@@ -361,8 +365,8 @@ class User_LDAP extends BackendUtility implements \OCP\IUserBackend, \OCP\UserIn
 	* @return bool
 	*/
 	public function deleteUser($uid) {
-		if (PluginManager::canDeleteUser()) {
-			return PluginManager::deleteUser($uid);
+		if ($this->userPluginManager->canDeleteUser()) {
+			return $this->userPluginManager->deleteUser($uid);
 		}
 
 		$marked = $this->ocConfig->getUserValue($uid, 'user_ldap', 'isDeleted', 0);
@@ -393,8 +397,8 @@ class User_LDAP extends BackendUtility implements \OCP\IUserBackend, \OCP\UserIn
 	 * @throws \Exception
 	 */
 	public function getHome($uid) {
-		if (PluginManager::implementsActions(Backend::GET_HOME)) {
-			return PluginManager::getHome($uid);
+		if ($this->userPluginManager->implementsActions(Backend::GET_HOME)) {
+			return $this->userPluginManager->getHome($uid);
 		}
 
 		if(isset($this->homesToKill[$uid]) && !empty($this->homesToKill[$uid])) {
@@ -435,8 +439,8 @@ class User_LDAP extends BackendUtility implements \OCP\IUserBackend, \OCP\UserIn
 	 * @return string|false display name
 	 */
 	public function getDisplayName($uid) {
-		if (PluginManager::implementsActions(Backend::GET_DISPLAYNAME)) {
-			return PluginManager::getDisplayName($uid);
+		if ($this->userPluginManager->implementsActions(Backend::GET_DISPLAYNAME)) {
+			return $this->userPluginManager->getDisplayName($uid);
 		}
 
 		if(!$this->userExists($uid)) {
@@ -490,8 +494,8 @@ class User_LDAP extends BackendUtility implements \OCP\IUserBackend, \OCP\UserIn
 	 * @return string|false display name
 	 */
 	public function setDisplayName($uid, $displayName) {
-		if (PluginManager::implementsActions(Backend::SET_DISPLAYNAME)) {
-			return PluginManager::setDisplayName($uid, $displayName);
+		if ($this->userPluginManager->implementsActions(Backend::SET_DISPLAYNAME)) {
+			return $this->userPluginManager->setDisplayName($uid, $displayName);
 		}
 		return false;
 	}
@@ -534,7 +538,7 @@ class User_LDAP extends BackendUtility implements \OCP\IUserBackend, \OCP\UserIn
 			| Backend::PROVIDE_AVATAR
 			| Backend::COUNT_USERS
 			| ((intval($this->access->connection->turnOnPasswordChange) === 1)?(Backend::SET_PASSWORD):0)
-			| PluginManager::getImplementedActions())
+			| $this->userPluginManager->getImplementedActions())
 			& $actions);
 	}
 
@@ -551,8 +555,8 @@ class User_LDAP extends BackendUtility implements \OCP\IUserBackend, \OCP\UserIn
 	 * @return int|bool
 	 */
 	public function countUsers() {
-		if (PluginManager::implementsActions(Backend::COUNT_USERS)) {
-			return PluginManager::countUsers();
+		if ($this->userPluginManager->implementsActions(Backend::COUNT_USERS)) {
+			return $this->userPluginManager->countUsers();
 		}
 
 		$filter = $this->access->getFilterForUserCount();
@@ -601,8 +605,8 @@ class User_LDAP extends BackendUtility implements \OCP\IUserBackend, \OCP\UserIn
 	 * @return bool|\OCP\IUser the created user of false
 	 */
 	public function createUser($username, $password) {
-		if (PluginManager::implementsActions(Backend::CREATE_USER)) {
-			return PluginManager::createUser($username, $password);
+		if ($this->userPluginManager->implementsActions(Backend::CREATE_USER)) {
+			return $this->userPluginManager->createUser($username, $password);
 		}
 		return false;
 	}

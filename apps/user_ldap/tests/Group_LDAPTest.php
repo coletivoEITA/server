@@ -69,6 +69,10 @@ class Group_LDAPTest extends \Test\TestCase {
 		return $access;
 	}
 
+	private function getPluginManagerMock() {
+		return $this->getMockBuilder('\OCA\User_LDAP\GroupPluginManager')->getMock();
+	}
+
 	private function enableGroups($access) {
 		$access->connection->expects($this->any())
 			->method('__get')
@@ -82,6 +86,7 @@ class Group_LDAPTest extends \Test\TestCase {
 
 	public function testCountEmptySearchString() {
 		$access = $this->getAccessMock();
+		$pluginManager = $this->getPluginManagerMock();
 
 		$this->enableGroups($access);
 
@@ -98,7 +103,7 @@ class Group_LDAPTest extends \Test\TestCase {
 			->method('countUsers')
 			->will($this->returnValue(2));
 
-		$groupBackend = new GroupLDAP($access);
+		$groupBackend = new GroupLDAP($access, $pluginManager);
 		$users = $groupBackend->countUsersInGroup('group');
 
 		$this->assertSame(6, $users);
@@ -106,6 +111,7 @@ class Group_LDAPTest extends \Test\TestCase {
 
 	public function testCountWithSearchString() {
 		$access = $this->getAccessMock();
+		$pluginManager = $this->getPluginManagerMock();
 
 		$this->enableGroups($access);
 
@@ -137,7 +143,7 @@ class Group_LDAPTest extends \Test\TestCase {
 				return 'foobar' . \OCP\Util::generateRandomBytes(7);
 			}));
 
-		$groupBackend = new GroupLDAP($access);
+		$groupBackend = new GroupLDAP($access,$pluginManager);
 		$users = $groupBackend->countUsersInGroup('group', '3');
 
 		$this->assertSame(2, $users);
@@ -145,6 +151,8 @@ class Group_LDAPTest extends \Test\TestCase {
 
 	public function testGidNumber2NameSuccess() {
 		$access = $this->getAccessMock();
+		$pluginManager = $this->getPluginManagerMock();
+
 		$this->enableGroups($access);
 
 		$userDN = 'cn=alice,cn=foo,dc=barfoo,dc=bar';
@@ -158,7 +166,7 @@ class Group_LDAPTest extends \Test\TestCase {
 			->with('cn=foo,dc=barfoo,dc=bar')
 			->will($this->returnValue('MyGroup'));
 
-		$groupBackend = new GroupLDAP($access);
+		$groupBackend = new GroupLDAP($access, $pluginManager);
 
 		$group = $groupBackend->gidNumber2Name('3117', $userDN);
 
@@ -167,6 +175,8 @@ class Group_LDAPTest extends \Test\TestCase {
 
 	public function testGidNumberID2NameNoGroup() {
 		$access = $this->getAccessMock();
+		$pluginManager = $this->getPluginManagerMock();
+
 		$this->enableGroups($access);
 
 		$userDN = 'cn=alice,cn=foo,dc=barfoo,dc=bar';
@@ -178,7 +188,7 @@ class Group_LDAPTest extends \Test\TestCase {
 		$access->expects($this->never())
 			->method('dn2groupname');
 
-		$groupBackend = new GroupLDAP($access);
+		$groupBackend = new GroupLDAP($access, $pluginManager);
 
 		$group = $groupBackend->gidNumber2Name('3117', $userDN);
 
@@ -187,6 +197,8 @@ class Group_LDAPTest extends \Test\TestCase {
 
 	public function testGidNumberID2NameNoName() {
 		$access = $this->getAccessMock();
+		$pluginManager = $this->getPluginManagerMock();
+
 		$this->enableGroups($access);
 
 		$userDN = 'cn=alice,cn=foo,dc=barfoo,dc=bar';
@@ -199,7 +211,7 @@ class Group_LDAPTest extends \Test\TestCase {
 			->method('dn2groupname')
 			->will($this->returnValue(false));
 
-		$groupBackend = new GroupLDAP($access);
+		$groupBackend = new GroupLDAP($access, $pluginManager);
 
 		$group = $groupBackend->gidNumber2Name('3117', $userDN);
 
@@ -208,6 +220,8 @@ class Group_LDAPTest extends \Test\TestCase {
 
 	public function testGetEntryGidNumberValue() {
 		$access = $this->getAccessMock();
+		$pluginManager = $this->getPluginManagerMock();
+
 		$this->enableGroups($access);
 
 		$dn = 'cn=foobar,cn=foo,dc=barfoo,dc=bar';
@@ -218,7 +232,7 @@ class Group_LDAPTest extends \Test\TestCase {
 			->with($dn, $attr)
 			->will($this->returnValue(array('3117')));
 
-		$groupBackend = new GroupLDAP($access);
+		$groupBackend = new GroupLDAP($access, $pluginManager);
 
 		$gid = $groupBackend->getGroupGidNumber($dn);
 
@@ -227,6 +241,8 @@ class Group_LDAPTest extends \Test\TestCase {
 
 	public function testGetEntryGidNumberNoValue() {
 		$access = $this->getAccessMock();
+		$pluginManager = $this->getPluginManagerMock();
+
 		$this->enableGroups($access);
 
 		$dn = 'cn=foobar,cn=foo,dc=barfoo,dc=bar';
@@ -237,7 +253,7 @@ class Group_LDAPTest extends \Test\TestCase {
 			->with($dn, $attr)
 			->will($this->returnValue(false));
 
-		$groupBackend = new GroupLDAP($access);
+		$groupBackend = new GroupLDAP($access, $pluginManager);
 
 		$gid = $groupBackend->getGroupGidNumber($dn);
 
@@ -246,6 +262,8 @@ class Group_LDAPTest extends \Test\TestCase {
 
 	public function testPrimaryGroupID2NameSuccess() {
 		$access = $this->getAccessMock();
+		$pluginManager = $this->getPluginManagerMock();
+
 		$this->enableGroups($access);
 
 		$userDN = 'cn=alice,cn=foo,dc=barfoo,dc=bar';
@@ -264,7 +282,7 @@ class Group_LDAPTest extends \Test\TestCase {
 			->with('cn=foo,dc=barfoo,dc=bar')
 			->will($this->returnValue('MyGroup'));
 
-		$groupBackend = new GroupLDAP($access);
+		$groupBackend = new GroupLDAP($access, $pluginManager);
 
 		$group = $groupBackend->primaryGroupID2Name('3117', $userDN);
 
@@ -273,6 +291,8 @@ class Group_LDAPTest extends \Test\TestCase {
 
 	public function testPrimaryGroupID2NameNoSID() {
 		$access = $this->getAccessMock();
+		$pluginManager = $this->getPluginManagerMock();
+
 		$this->enableGroups($access);
 
 		$userDN = 'cn=alice,cn=foo,dc=barfoo,dc=bar';
@@ -288,7 +308,7 @@ class Group_LDAPTest extends \Test\TestCase {
 		$access->expects($this->never())
 			->method('dn2groupname');
 
-		$groupBackend = new GroupLDAP($access);
+		$groupBackend = new GroupLDAP($access, $pluginManager);
 
 		$group = $groupBackend->primaryGroupID2Name('3117', $userDN);
 
@@ -297,6 +317,8 @@ class Group_LDAPTest extends \Test\TestCase {
 
 	public function testPrimaryGroupID2NameNoGroup() {
 		$access = $this->getAccessMock();
+		$pluginManager = $this->getPluginManagerMock();
+
 		$this->enableGroups($access);
 
 		$userDN = 'cn=alice,cn=foo,dc=barfoo,dc=bar';
@@ -313,7 +335,7 @@ class Group_LDAPTest extends \Test\TestCase {
 		$access->expects($this->never())
 			->method('dn2groupname');
 
-		$groupBackend = new GroupLDAP($access);
+		$groupBackend = new GroupLDAP($access, $pluginManager);
 
 		$group = $groupBackend->primaryGroupID2Name('3117', $userDN);
 
@@ -322,6 +344,8 @@ class Group_LDAPTest extends \Test\TestCase {
 
 	public function testPrimaryGroupID2NameNoName() {
 		$access = $this->getAccessMock();
+		$pluginManager = $this->getPluginManagerMock();
+
 		$this->enableGroups($access);
 
 		$userDN = 'cn=alice,cn=foo,dc=barfoo,dc=bar';
@@ -339,7 +363,7 @@ class Group_LDAPTest extends \Test\TestCase {
 			->method('dn2groupname')
 			->will($this->returnValue(false));
 
-		$groupBackend = new GroupLDAP($access);
+		$groupBackend = new GroupLDAP($access, $pluginManager);
 
 		$group = $groupBackend->primaryGroupID2Name('3117', $userDN);
 
@@ -350,6 +374,8 @@ class Group_LDAPTest extends \Test\TestCase {
 		//tests getEntryGroupID via getGroupPrimaryGroupID
 		//which is basically identical to getUserPrimaryGroupIDs
 		$access = $this->getAccessMock();
+		$pluginManager = $this->getPluginManagerMock();
+
 		$this->enableGroups($access);
 
 		$dn = 'cn=foobar,cn=foo,dc=barfoo,dc=bar';
@@ -360,7 +386,7 @@ class Group_LDAPTest extends \Test\TestCase {
 			->with($dn, $attr)
 			->will($this->returnValue(array('3117')));
 
-		$groupBackend = new GroupLDAP($access);
+		$groupBackend = new GroupLDAP($access, $pluginManager);
 
 		$gid = $groupBackend->getGroupPrimaryGroupID($dn);
 
@@ -371,6 +397,8 @@ class Group_LDAPTest extends \Test\TestCase {
 		//tests getEntryGroupID via getGroupPrimaryGroupID
 		//which is basically identical to getUserPrimaryGroupIDs
 		$access = $this->getAccessMock();
+		$pluginManager = $this->getPluginManagerMock();
+
 		$this->enableGroups($access);
 
 		$dn = 'cn=foobar,cn=foo,dc=barfoo,dc=bar';
@@ -381,7 +409,7 @@ class Group_LDAPTest extends \Test\TestCase {
 			->with($dn, $attr)
 			->will($this->returnValue(false));
 
-		$groupBackend = new GroupLDAP($access);
+		$groupBackend = new GroupLDAP($access, $pluginManager);
 
 		$gid = $groupBackend->getGroupPrimaryGroupID($dn);
 
@@ -394,6 +422,8 @@ class Group_LDAPTest extends \Test\TestCase {
 	 */
 	public function testInGroupHitsUidGidCache() {
 		$access = $this->getAccessMock();
+		$pluginManager = $this->getPluginManagerMock();
+
 		$this->enableGroups($access);
 
 		$uid = 'someUser';
@@ -408,19 +438,21 @@ class Group_LDAPTest extends \Test\TestCase {
 		$access->expects($this->never())
 			->method('username2dn');
 
-		$groupBackend = new GroupLDAP($access);
+		$groupBackend = new GroupLDAP($access, $pluginManager);
 		$groupBackend->inGroup($uid, $gid);
 	}
 
 	public function testGetGroupsWithOffset() {
 		$access = $this->getAccessMock();
+		$pluginManager = $this->getPluginManagerMock();
+
 		$this->enableGroups($access);
 
 		$access->expects($this->once())
 			->method('nextcloudGroupNames')
 			->will($this->returnValue(array('group1', 'group2')));
 
-		$groupBackend = new GroupLDAP($access);
+		$groupBackend = new GroupLDAP($access, $pluginManager);
 		$groups = $groupBackend->getGroups('', 2, 2);
 
 		$this->assertSame(2, count($groups));
@@ -432,6 +464,8 @@ class Group_LDAPTest extends \Test\TestCase {
 	 */
 	public function testUsersInGroupPrimaryMembersOnly() {
 		$access = $this->getAccessMock();
+		$pluginManager = $this->getPluginManagerMock();
+
 		$this->enableGroups($access);
 
 		$access->connection->expects($this->any())
@@ -457,7 +491,7 @@ class Group_LDAPTest extends \Test\TestCase {
 			->method('nextcloudUserNames')
 			->willReturnOnConsecutiveCalls(['lisa', 'bart', 'kira', 'brad'], ['walle', 'dino', 'xenia']);
 
-		$groupBackend = new GroupLDAP($access);
+		$groupBackend = new GroupLDAP($access, $pluginManager);
 		$users = $groupBackend->usersInGroup('foobar');
 
 		$this->assertSame(7, count($users));
@@ -469,6 +503,8 @@ class Group_LDAPTest extends \Test\TestCase {
 	 */
 	public function testUsersInGroupPrimaryAndUnixMembers() {
 		$access = $this->getAccessMock();
+		$pluginManager = $this->getPluginManagerMock();
+
 		$this->enableGroups($access);
 
 		$access->connection->expects($this->any())
@@ -492,7 +528,7 @@ class Group_LDAPTest extends \Test\TestCase {
 			->method('nextcloudUserNames')
 			->will($this->returnValue(array('lisa', 'bart', 'kira', 'brad')));
 
-		$groupBackend = new GroupLDAP($access);
+		$groupBackend = new GroupLDAP($access, $pluginManager);
 		$users = $groupBackend->usersInGroup('foobar');
 
 		$this->assertSame(4, count($users));
@@ -504,6 +540,8 @@ class Group_LDAPTest extends \Test\TestCase {
 	 */
 	public function testCountUsersInGroupPrimaryMembersOnly() {
 		$access = $this->getAccessMock();
+		$pluginManager = $this->getPluginManagerMock();
+
 		$this->enableGroups($access);
 
 		$access->connection->expects($this->any())
@@ -527,7 +565,7 @@ class Group_LDAPTest extends \Test\TestCase {
 			->method('countUsers')
 			->will($this->returnValue(4));
 
-		$groupBackend = new GroupLDAP($access);
+		$groupBackend = new GroupLDAP($access, $pluginManager);
 		$users = $groupBackend->countUsersInGroup('foobar');
 
 		$this->assertSame(4, $users);
@@ -535,6 +573,8 @@ class Group_LDAPTest extends \Test\TestCase {
 
 	public function testGetUserGroupsMemberOf() {
 		$access = $this->getAccessMock();
+		$pluginManager = $this->getPluginManagerMock();
+
 		$this->enableGroups($access);
 
 		$dn = 'cn=userX,dc=foobar';
@@ -558,7 +598,7 @@ class Group_LDAPTest extends \Test\TestCase {
 			->method('groupsMatchFilter')
 			->will($this->returnArgument(0));
 
-		$groupBackend = new GroupLDAP($access);
+		$groupBackend = new GroupLDAP($access, $pluginManager);
 		$groups = $groupBackend->getUserGroups('userX');
 
 		$this->assertSame(2, count($groups));
@@ -566,6 +606,7 @@ class Group_LDAPTest extends \Test\TestCase {
 
 	public function testGetUserGroupsMemberOfDisabled() {
 		$access = $this->getAccessMock();
+		$pluginManager = $this->getPluginManagerMock();
 
 		$access->connection->expects($this->any())
 			->method('__get')
@@ -595,12 +636,13 @@ class Group_LDAPTest extends \Test\TestCase {
 			->method('nextcloudGroupNames')
 			->will($this->returnValue([]));
 
-		$groupBackend = new GroupLDAP($access);
+		$groupBackend = new GroupLDAP($access, $pluginManager);
 		$groupBackend->getUserGroups('userX');
 	}
 
 	public function testGetGroupsByMember() {
 		$access = $this->getAccessMock();
+		$pluginManager = $this->getPluginManagerMock();
 
 		$access->connection->expects($this->any())
 			->method('__get')
@@ -646,7 +688,7 @@ class Group_LDAPTest extends \Test\TestCase {
 			->method('fetchListOfGroups')
 			->will($this->returnValue([$group1, $group2]));
 
-		$groupBackend = new GroupLDAP($access);
+		$groupBackend = new GroupLDAP($access, $pluginManager);
 		$groups = $groupBackend->getUserGroups('userX');
 		$this->assertEquals(['group1', 'group2'], $groups);
 

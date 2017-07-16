@@ -49,10 +49,19 @@ if(count($configPrefixes) > 0) {
 		];
 	});
 
+	\OC::$server->registerService('LDAPUserPluginManager', function() {
+		return new OCA\User_LDAP\UserPluginManager();
+	});
+	\OC::$server->registerService('LDAPGroupPluginManager', function() {
+		return new OCA\User_LDAP\GroupPluginManager();
+	});
+	$userPluginManager = \OC::$server->query('LDAPUserPluginManager');
+	$groupPluginManager = \OC::$server->query('LDAPGroupPluginManager');
+
 	$userBackend  = new OCA\User_LDAP\User_Proxy(
-		$configPrefixes, $ldapWrapper, $ocConfig, $notificationManager
+		$configPrefixes, $ldapWrapper, $ocConfig, $notificationManager, $userPluginManager
 	);
-	$groupBackend  = new OCA\User_LDAP\Group_Proxy($configPrefixes, $ldapWrapper);
+	$groupBackend  = new OCA\User_LDAP\Group_Proxy($configPrefixes, $ldapWrapper, $groupPluginManager);
 	// register user backend
 	OC_User::useBackend($userBackend);
 	// Hook to allow plugins to work on registered backends

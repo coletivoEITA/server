@@ -24,7 +24,7 @@
 namespace OCA\User_LDAP\AppInfo;
 
 use OCA\User_LDAP\Controller\RenewPasswordController;
-use OCA\User_LDAP\PluginManager;
+use OCA\User_LDAP\UserPluginManager;
 use OCP\AppFramework\App;
 use OCP\AppFramework\IAppContainer;
 

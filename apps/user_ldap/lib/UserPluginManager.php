@@ -25,11 +25,13 @@ namespace OCA\User_LDAP;
 
 use OC\User\Backend;
 
-class PluginManager {
+class UserPluginManager {
 
-	private static $respondToActions = 0;
+	public $test = false;
 
-	private static $which = array(
+	private $respondToActions = 0;
+
+	private $which = array(
 		Backend::CREATE_USER => null,
 		Backend::SET_PASSWORD => null,
 		Backend::CHECK_PASSWORD => null,
@@ -41,46 +43,32 @@ class PluginManager {
 		'deleteUser' => null
 	);
 
-	public static function reset() {
-		self::$respondToActions = 0;
-
-		self::$which = array(
-			Backend::CREATE_USER => null,
-			Backend::SET_PASSWORD => null,
-			Backend::CHECK_PASSWORD => null,
-			Backend::GET_HOME => null,
-			Backend::GET_DISPLAYNAME => null,
-			Backend::SET_DISPLAYNAME => null,
-			Backend::PROVIDE_AVATAR => null,
-			Backend::COUNT_USERS => null,
-			'deleteUser' => null
-		);
+	public function getImplementedActions() {
+		return $this->respondToActions;
 	}
 
-	public static function getImplementedActions() {
-		return self::$respondToActions;
-	}
-
-	public static function register(ILDAPPlugin $plugin) {
+	public function register(ILDAPUserPlugin $plugin) {
 		$respondToActions = $plugin->respondToActions();
-		self::$respondToActions |= $respondToActions;
+		$this->respondToActions |= $respondToActions;
 
-		foreach(self::$which as $action => $v) {
+		foreach($this->which as $action => $v) {
 			if ((bool)($respondToActions & $action)) {
-				self::$which[$action] = $plugin;
+				$this->which[$action] = $plugin;
+				\OC::$server->getLogger()->debug("Registered action ".$action." to plugin ".get_class($plugin), ['app' => 'user_ldap']);
 			}
 		}
 		if (method_exists($plugin,'deleteUser')) {
-			self::$which['deleteUser'] = $plugin;
+			$this->which['deleteUser'] = $plugin;
 		}
 	}
 
 	public static function implementsActions($actions){
-		return (bool) ($actions & self::$respondToActions);
+	public function implementsActions($actions) {
+		return (bool) ($actions & $this->respondToActions);
 	}
 
-	public static function createUser($username, $password) {
-		$plugin = self::$which[Backend::CREATE_USER];
+	public function createUser($username, $password) {
+		$plugin = $this->which[Backend::CREATE_USER];
 
 		if ($plugin) {
 			return $plugin->createUser($username,$password);
@@ -89,8 +77,8 @@ class PluginManager {
 		return false;
 	}
 
-	public static function setPassword($uid, $password) {
-		$plugin = self::$which[Backend::SET_PASSWORD];
+	public function setPassword($uid, $password) {
+		$plugin = $this->which[Backend::SET_PASSWORD];
 
 		if ($plugin) {
 			return $plugin->setPassword($uid,$password);
@@ -99,8 +87,8 @@ class PluginManager {
 		return false;
 	}
 
-	public static function canChangeAvatar($uid) {
-		$plugin = self::$which[Backend::PROVIDE_AVATAR];
+	public function canChangeAvatar($uid) {
+		$plugin = $this->which[Backend::PROVIDE_AVATAR];
 
 		if ($plugin) {
 			return $plugin->canChangeAvatar($uid);
@@ -109,8 +97,8 @@ class PluginManager {
 		return false;
 	}
 
-	public static function checkPassword($uid, $password) {
-		$plugin = self::$which[Backend::CHECK_PASSWORD];
+	public function checkPassword($uid, $password) {
+		$plugin = $this->which[Backend::CHECK_PASSWORD];
 
 		if ($plugin) {
 			return $plugin->checkPassword($uid, $password);
@@ -119,8 +107,8 @@ class PluginManager {
 		return false;
 	}
 
-	public static function getHome($uid) {
-		$plugin = self::$which[Backend::GET_HOME];
+	public function getHome($uid) {
+		$plugin = $this->which[Backend::GET_HOME];
 
 		if ($plugin) {
 			return $plugin->getHome($uid);
@@ -129,8 +117,8 @@ class PluginManager {
 		return false;
 	}
 
-	public static function getDisplayName($uid) {
-		$plugin = self::$which[Backend::GET_DISPLAYNAME];
+	public function getDisplayName($uid) {
+		$plugin = $this->which[Backend::GET_DISPLAYNAME];
 
 		if ($plugin) {
 			return $plugin->getDisplayName($uid);
@@ -139,8 +127,8 @@ class PluginManager {
 		return false;
 	}
 
-	public static function setDisplayName($uid, $displayName) {
-		$plugin = self::$which[Backend::SET_DISPLAYNAME];
+	public function setDisplayName($uid, $displayName) {
+		$plugin = $this->which[Backend::SET_DISPLAYNAME];
 
 		if ($plugin) {
 			return $plugin->setDisplayName($uid, $displayName);
@@ -149,8 +137,8 @@ class PluginManager {
 		return false;
 	}
 
-	public static function countUsers() {
-		$plugin = self::$which[Backend::COUNT_USERS];
+	public function countUsers() {
+		$plugin = $this->which[Backend::COUNT_USERS];
 
 		if ($plugin) {
 			return $plugin->countUsers();
@@ -162,16 +150,16 @@ class PluginManager {
 	/**
 	 * @return bool
 	 */
-	public static function canDeleteUser() {
-		return self::$which['deleteUser'] !== null;
+	public function canDeleteUser() {
+		return $this->which['deleteUser'] !== null;
 	}
 
 	/**
 	 * @param $uid
 	 * @return bool
 	 */
-	public static function deleteUser($uid) {
-		$plugin = self::$which['deleteUser'];
+	public function deleteUser($uid) {
+		$plugin = $this->which['deleteUser'];
 		if ($plugin) {
 			return $plugin->deleteUser($uid);
 		}
