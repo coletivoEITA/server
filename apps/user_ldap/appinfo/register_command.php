@@ -27,6 +27,7 @@ use OCA\User_LDAP\LDAP;
 use OCA\User_LDAP\User_Proxy;
 use OCA\User_LDAP\Mapping\UserMapping;
 use OCA\User_LDAP\User\DeletedUsersIndex;
+use OCA\User_LDAP\UserPluginManager;
 
 $dbConnection = \OC::$server->getDatabaseConnection();
 $userMapping = new UserMapping($dbConnection);
@@ -36,7 +37,8 @@ $uBackend = new User_Proxy(
 	$helper->getServerConfigurationPrefixes(true),
 	new LDAP(),
 	$ocConfig,
-	\OC::$server->getNotificationManager()
+	\OC::$server->getNotificationManager(),
+	new UserPluginManager()
 );
 $deletedUsersIndex = new DeletedUsersIndex(
 	$ocConfig, $dbConnection, $userMapping

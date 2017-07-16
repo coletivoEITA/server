@@ -40,7 +40,15 @@ interface ILDAPProvider {
 	 * @since 11.0.0
 	 */
 	public function getUserDN($uid);
-	
+
+	/**
+	 * Translate a group id to LDAP DN.
+	 * @param string $gid group id
+	 * @return string
+	 * @since 13.0.0
+	 */
+	public function getGroupDN($gid);
+
 	/**
 	 * Translate a LDAP DN to an internal user name.
 	 * @param string $dn LDAP DN

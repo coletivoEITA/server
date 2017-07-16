@@ -24,9 +24,9 @@
 namespace OCA\User_LDAP\Tests;
 
 
-use OCA\User_LDAP\ILDAPPlugin;
+use OCA\User_LDAP\ILDAPUserPlugin;
 
-class LDAPPluginDummy implements ILDAPPlugin {
+class LDAPUserPluginDummy implements ILDAPUserPlugin {
 
 	public function respondToActions() {
 		return null;

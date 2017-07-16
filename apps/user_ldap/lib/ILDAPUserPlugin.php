@@ -24,7 +24,7 @@
 namespace OCA\User_LDAP;
 
 
-interface ILDAPPlugin {
+interface ILDAPUserPlugin {
 
 	/**
 	 * Check if plugin implements actions

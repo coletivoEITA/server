@@ -39,6 +39,7 @@
 namespace OCA\User_LDAP;
 
 use OC\Cache\CappedMemoryCache;
+use OC\Group\Backend;
 
 class Group_LDAP extends BackendUtility implements \OCP\GroupInterface {
 	protected $enabled = false;
@@ -53,7 +54,10 @@ class Group_LDAP extends BackendUtility implements \OCP\GroupInterface {
 	 */
 	protected $cachedGroupsByMember;
 
-	public function __construct(Access $access) {
+	/** @var GroupPluginManager */
+	protected $groupPluginManager;
+
+	public function __construct(Access $access, GroupPluginManager $groupPluginManager) {
 		parent::__construct($access);
 		$filter = $this->access->connection->ldapGroupFilter;
 		$gassoc = $this->access->connection->ldapGroupMemberAssocAttr;
@@ -63,6 +67,7 @@ class Group_LDAP extends BackendUtility implements \OCP\GroupInterface {
 
 		$this->cachedGroupMembers = new CappedMemoryCache();
 		$this->cachedGroupsByMember = new CappedMemoryCache();
+		$this->groupPluginManager = $groupPluginManager;
 	}
 
 	/**
@@ -860,6 +865,10 @@ class Group_LDAP extends BackendUtility implements \OCP\GroupInterface {
 	 * @return int|bool
 	 */
 	public function countUsersInGroup($gid, $search = '') {
+		if ($this->groupPluginManager->implementsActions(Backend::COUNT_USERS)) {
+			return $this->groupPluginManager->countUsersInGroup($gid, $search);
+		}
+
 		$cacheKey = 'countUsersInGroup-'.$gid.'-'.$search;
 		if(!$this->enabled || !$this->groupExists($gid)) {
 			return false;
@@ -1070,14 +1079,15 @@ class Group_LDAP extends BackendUtility implements \OCP\GroupInterface {
 	* compared with OC_USER_BACKEND_CREATE_USER etc.
 	*/
 	public function implementsActions($actions) {
-		return (bool)(\OC\Group\Backend::COUNT_USERS & $actions);
+		return (bool)((\OC\Group\Backend::COUNT_USERS |
+				$this->groupPluginManager->getImplementedActions()) & $actions);
 	}
 
 	/**
 	 * Return access for LDAP interaction.
 	 * @return Access instance of Access for LDAP interaction
 	 */
-	public function getLDAPAccess() {
+	public function getLDAPAccess($gid) {
 		return $this->access;
 	}
 }
