@@ -1076,7 +1076,7 @@ class Group_LDAP extends BackendUtility implements \OCP\GroupInterface, IGroupLD
 	* @return boolean
 	*
 	* Returns the supported actions as int to be
-	* compared with OC_USER_BACKEND_CREATE_USER etc.
+	* compared with \OC\User\Backend::CREATE_USER etc.
 	*/
 	public function implementsActions($actions) {
 		return (bool)((\OC\Group\Backend::COUNT_USERS |
