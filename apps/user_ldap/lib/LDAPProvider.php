@@ -64,7 +64,7 @@ class LDAPProvider implements ILDAPProvider, IDeletionFlagSupport {
         }
 		foreach ($serverContainer->getGroupManager()->getBackends() as $backend){
 			$this->logger->debug('instance '.get_class($backend).' group backend.', ['app' => 'user_ldap']);
-			if ($backend instanceof Group_LDAP) {
+			if ($backend instanceof IGroupLDAP) {
 				$this->groupBackend = $backend;
 				$groupBackendFound = true;
 				break;

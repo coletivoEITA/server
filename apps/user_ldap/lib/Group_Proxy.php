@@ -26,7 +26,7 @@
 
 namespace OCA\User_LDAP;
 
-class Group_Proxy extends Proxy implements \OCP\GroupInterface {
+class Group_Proxy extends Proxy implements \OCP\GroupInterface, IGroupLDAP {
 	private $backends = array();
 	private $refBackend = null;
 
@@ -147,7 +147,7 @@ class Group_Proxy extends Proxy implements \OCP\GroupInterface {
 
 	/**
 	 * @param string $gid
-	 * @return \OCP\IGroup
+	 * @return bool
 	 */
 	public function createGroup($gid) {
 		return $this->handleRequest(

@@ -41,7 +41,7 @@ namespace OCA\User_LDAP;
 use OC\Cache\CappedMemoryCache;
 use OC\Group\Backend;
 
-class Group_LDAP extends BackendUtility implements \OCP\GroupInterface {
+class Group_LDAP extends BackendUtility implements \OCP\GroupInterface, IGroupLDAP {
 	protected $enabled = false;
 
 	/**
@@ -1089,5 +1089,70 @@ class Group_LDAP extends BackendUtility implements \OCP\GroupInterface {
 	 */
 	public function getLDAPAccess($gid) {
 		return $this->access;
+	}
+
+	/**
+	 * @param string $gid
+	 * @return bool
+	 */
+	public function createGroup($gid) {
+		if ($this->groupPluginManager->implementsActions(Backend::CREATE_GROUP)) {
+			if ($this->groupPluginManager->createGroup($gid)) {
+				$this->access->connection->clearCache();
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * delete a group
+	 * @param string $gid gid of the group to delete
+	 * @return bool
+	 */
+	public function deleteGroup($gid) {
+		if ($this->groupPluginManager->implementsActions(Backend::DELETE_GROUP)) {
+			if ($this->groupPluginManager->deleteGroup($gid)) {
+				$this->access->connection->clearCache();
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Add a user to a group
+	 * @param string $uid Name of the user to add to group
+	 * @param string $gid Name of the group in which add the user
+	 * @return bool
+	 *
+	 * Adds a user to a group.
+	 */
+	public function addToGroup($uid, $gid) {
+		if ($this->groupPluginManager->implementsActions(Backend::ADD_TO_GROUP)) {
+			if ($this->groupPluginManager->addToGroup($uid, $gid)) {
+				$this->access->connection->clearCache();
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Removes a user from a group
+	 * @param string $uid Name of the user to remove from group
+	 * @param string $gid Name of the group from which remove the user
+	 * @return bool
+	 *
+	 * removes the user from a group.
+	 */
+	public function removeFromGroup($uid, $gid) {
+		if ($this->groupPluginManager->implementsActions(Backend::REMOVE_FROM_GROUP)) {
+			if ($this->groupPluginManager->removeFromGroup($uid, $gid)) {
+				$this->access->connection->clearCache();
+				return true;
+			}
+		}
+		return false;
 	}
 }
