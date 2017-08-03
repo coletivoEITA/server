@@ -34,7 +34,6 @@ class UserPluginManager {
 	private $which = array(
 		Backend::CREATE_USER => null,
 		Backend::SET_PASSWORD => null,
-		Backend::CHECK_PASSWORD => null,
 		Backend::GET_HOME => null,
 		Backend::GET_DISPLAYNAME => null,
 		Backend::SET_DISPLAYNAME => null,
@@ -72,8 +71,7 @@ class UserPluginManager {
 		if ($plugin) {
 			return $plugin->createUser($username,$password);
 		}
-
-		return false;
+		throw new \Exception('No plugin implements createUser in this LDAP Backend.');
 	}
 
 	public function setPassword($uid, $password) {
@@ -82,8 +80,7 @@ class UserPluginManager {
 		if ($plugin) {
 			return $plugin->setPassword($uid,$password);
 		}
-
-		return false;
+		throw new \Exception('No plugin implements setPassword in this LDAP Backend.');
 	}
 
 	public function canChangeAvatar($uid) {
@@ -92,18 +89,7 @@ class UserPluginManager {
 		if ($plugin) {
 			return $plugin->canChangeAvatar($uid);
 		}
-
-		return false;
-	}
-
-	public function checkPassword($uid, $password) {
-		$plugin = $this->which[Backend::CHECK_PASSWORD];
-
-		if ($plugin) {
-			return $plugin->checkPassword($uid, $password);
-		}
-
-		return false;
+		throw new \Exception('No plugin implements canChangeAvatar in this LDAP Backend.');
 	}
 
 	public function getHome($uid) {
@@ -112,8 +98,7 @@ class UserPluginManager {
 		if ($plugin) {
 			return $plugin->getHome($uid);
 		}
-
-		return false;
+		throw new \Exception('No plugin implements getHome in this LDAP Backend.');
 	}
 
 	public function getDisplayName($uid) {
@@ -122,8 +107,7 @@ class UserPluginManager {
 		if ($plugin) {
 			return $plugin->getDisplayName($uid);
 		}
-
-		return false;
+		throw new \Exception('No plugin implements getDisplayName in this LDAP Backend.');
 	}
 
 	public function setDisplayName($uid, $displayName) {
@@ -132,8 +116,7 @@ class UserPluginManager {
 		if ($plugin) {
 			return $plugin->setDisplayName($uid, $displayName);
 		}
-
-		return false;
+		throw new \Exception('No plugin implements setDisplayName in this LDAP Backend.');
 	}
 
 	public function countUsers() {
@@ -142,8 +125,7 @@ class UserPluginManager {
 		if ($plugin) {
 			return $plugin->countUsers();
 		}
-
-		return false;
+		throw new \Exception('No plugin implements countUsers in this LDAP Backend.');
 	}
 
 	/**
@@ -162,7 +144,7 @@ class UserPluginManager {
 		if ($plugin) {
 			return $plugin->deleteUser($uid);
 		}
-		return false;
+		throw new \Exception('No plugin implements deleteUser in this LDAP Backend.');
 	}
 
 }

@@ -58,16 +58,6 @@ interface ILDAPUserPlugin {
 	public function setPassword($uid, $password);
 
 	/**
-	 * Check if the password is correct
-	 * @param string $uid The username
-	 * @param string $password The password
-	 * @return bool
-	 *
-	 * Check if the password is correct without logging in the user
-	 */
-	public function checkPassword($uid, $password);
-
-	/**
 	 * get the user's home directory
 	 * @param string $uid the username
 	 * @return boolean

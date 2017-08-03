@@ -493,7 +493,7 @@ class User_LDAP extends BackendUtility implements \OCP\IUserBackend, \OCP\UserIn
 		if ($this->userPluginManager->implementsActions(Backend::SET_DISPLAYNAME)) {
 			return $this->userPluginManager->setDisplayName($uid, $displayName);
 		}
-		return false;
+		return null;
 	}
 
 	/**
@@ -598,13 +598,13 @@ class User_LDAP extends BackendUtility implements \OCP\IUserBackend, \OCP\UserIn
 	 * create new user
 	 * @param string $username username of the new user
 	 * @param string $password password of the new user
-	 * @return bool|\OCP\IUser the created user of false
+	 * @return bool was the user created?
 	 */
 	public function createUser($username, $password) {
 		if ($this->userPluginManager->implementsActions(Backend::CREATE_USER)) {
 			return $this->userPluginManager->createUser($username, $password);
 		}
-		return false;
+		return null;
 	}
 
 }
