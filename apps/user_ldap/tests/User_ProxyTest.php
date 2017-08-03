@@ -24,8 +24,10 @@
 
 namespace OCA\User_LDAP\Tests;
 
+use OCA\User_LDAP\ILDAPUserPlugin;
 use OCA\User_LDAP\ILDAPWrapper;
 use OCA\User_LDAP\User_Proxy;
+use OCA\User_LDAP\UserPluginManager;
 use OCP\IConfig;
 use OCP\Notification\IManager as INotificationManager;
 use Test\TestCase;
@@ -39,6 +41,8 @@ class User_ProxyTest extends TestCase  {
 	private $notificationManager;
 	/** @var User_Proxy|\PHPUnit_Framework_MockObject_MockObject */
 	private $proxy;
+	/** @var UserPluginManager|\PHPUnit_Framework_MockObject_MockObject */
+	private $userPluginManager;
 
 	public function setUp() {
 		parent::setUp();
@@ -46,12 +50,14 @@ class User_ProxyTest extends TestCase  {
 		$this->ldapWrapper = $this->createMock(ILDAPWrapper::class);
 		$this->config = $this->createMock(IConfig::class);
 		$this->notificationManager = $this->createMock(INotificationManager::class);
+		$this->userPluginManager = $this->createMock(UserPluginManager::class);
 		$this->proxy = $this->getMockBuilder(User_Proxy::class)
 			->setConstructorArgs([
 				[],
 				$this->ldapWrapper,
 				$this->config,
 				$this->notificationManager,
+				$this->userPluginManager,
 			])
 			->setMethods(['handleRequest'])
 			->getMock();
