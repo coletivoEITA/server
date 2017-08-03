@@ -38,7 +38,7 @@ $uBackend = new User_Proxy(
 	new LDAP(),
 	$ocConfig,
 	\OC::$server->getNotificationManager(),
-	new UserPluginManager()
+	\OC::$server->query('LDAPUserPluginManager')
 );
 $deletedUsersIndex = new DeletedUsersIndex(
 	$ocConfig, $dbConnection, $userMapping
