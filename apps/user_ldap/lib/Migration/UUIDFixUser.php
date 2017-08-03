@@ -32,6 +32,7 @@ use OCP\IConfig;
 class UUIDFixUser extends UUIDFix {
 	public function __construct(UserMapping $mapper, LDAP $ldap, IConfig $config, Helper $helper) {
 		$this->mapper = $mapper;
-		$this->proxy = new Group_Proxy($helper->getServerConfigurationPrefixes(true), $ldap, $config);
+		$groupPluginManager = \OC::$server->query('LDAPGroupPluginManager');
+		$this->proxy = new Group_Proxy($helper->getServerConfigurationPrefixes(true), $ldap, $groupPluginManager);
 	}
 }
