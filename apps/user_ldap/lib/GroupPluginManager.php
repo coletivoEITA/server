@@ -64,8 +64,7 @@ class GroupPluginManager {
 		if ($plugin) {
 			return $plugin->createGroup($gid);
 		}
-
-		return false;
+		throw new \Exception('No plugin implements createGroup in this LDAP Backend.');
 	}
 
 	public function deleteGroup($gid) {
@@ -74,8 +73,7 @@ class GroupPluginManager {
 		if ($plugin) {
 			return $plugin->deleteGroup($gid);
 		}
-
-		return false;
+		throw new \Exception('No plugin implements deleteGroup in this LDAP Backend.');
 	}
 
 	public function addToGroup($uid, $gid) {
@@ -84,8 +82,7 @@ class GroupPluginManager {
 		if ($plugin) {
 			return $plugin->addToGroup($uid, $gid);
 		}
-
-		return false;
+		throw new \Exception('No plugin implements addToGroup in this LDAP Backend.');
 	}
 
 	public function removeFromGroup($uid, $gid) {
@@ -94,8 +91,7 @@ class GroupPluginManager {
 		if ($plugin) {
 			return $plugin->removeFromGroup($uid, $gid);
 		}
-
-		return false;
+		throw new \Exception('No plugin implements removeFromGroup in this LDAP Backend.');
 	}
 
 	public function countUsersInGroup($gid, $search = '') {
@@ -104,8 +100,7 @@ class GroupPluginManager {
 		if ($plugin) {
 			return $plugin->countUsersInGroup($gid,$search);
 		}
-
-		return false;
+		throw new \Exception('No plugin implements countUsersInGroup in this LDAP Backend.');
 	}
 
 	public function getGroupDetails($gid) {
@@ -114,7 +109,6 @@ class GroupPluginManager {
 		if ($plugin) {
 			return $plugin->getGroupDetails($gid);
 		}
-
-		return false;
+		throw new \Exception('No plugin implements getGroupDetails in this LDAP Backend.');
 	}
 }

@@ -24,40 +24,36 @@
 namespace OCA\User_LDAP\Tests;
 
 
-use OCA\User_LDAP\ILDAPUserPlugin;
+use OCA\User_LDAP\ILDAPGroupPlugin;
 
-class LDAPUserPluginDummy implements ILDAPUserPlugin {
+class LDAPGroupPluginDummy implements ILDAPGroupPlugin {
+
 
 	public function respondToActions() {
 		return null;
 	}
 
-	public function createUser($username, $password) {
+	public function createGroup($gid) {
 		return null;
 	}
 
-	public function setPassword($uid, $password) {
+	public function deleteGroup($gid) {
 		return null;
 	}
 
-	public function getHome($uid) {
+	public function addToGroup($uid, $gid) {
 		return null;
 	}
 
-	public function getDisplayName($uid) {
+	public function removeFromGroup($uid, $gid) {
 		return null;
 	}
 
-	public function setDisplayName($uid, $displayName) {
+	public function countUsersInGroup($gid, $search = '') {
 		return null;
 	}
 
-	public function canChangeAvatar($uid) {
+	public function getGroupDetails($gid) {
 		return null;
 	}
-
-	public function countUsers() {
-		return null;
-	}
-
 }
