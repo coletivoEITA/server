@@ -257,7 +257,7 @@ class LDAPProvider implements ILDAPProvider, IDeletionFlagSupport {
 		if(!$this->groupBackend->groupExists($gid)){
 			throw new \Exception('Group id not found in LDAP');
 		}
-		return $this->groupBackend->getLDAPAccess($gid)->getConnection()->getConfiguration()['ldap_group_member_assoc_attr'];
+		return $this->groupBackend->getLDAPAccess($gid)->getConnection()->getConfiguration()['ldap_group_member_assoc_attribute'];
 	}
 
 }

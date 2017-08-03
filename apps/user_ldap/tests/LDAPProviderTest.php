@@ -540,7 +540,7 @@ class LDAPProviderTest extends \Test\TestCase {
 			->willReturn(true);
 		$groupBackend->expects($this->any())
 			->method('getConfiguration')
-			->willReturn(array('ldap_group_member_assoc_attr'=>'assoc_type'));
+			->willReturn(array('ldap_group_member_assoc_attribute'=>'assoc_type'));
 		$groupBackend->expects($this->any())
 			->method($this->anything())
 			->willReturnSelf();

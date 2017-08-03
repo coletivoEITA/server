@@ -258,6 +258,6 @@ class Group_Proxy extends Proxy implements \OCP\GroupInterface, IGroupLDAP {
 	 * @return Access instance of Access for LDAP interaction
 	 */
 	public function getLDAPAccess($gid) {
-		return $this->handleRequest($gid, 'getLDAPAccess', []);
+		return $this->handleRequest($gid, 'getLDAPAccess', [$gid]);
 	}
 }
