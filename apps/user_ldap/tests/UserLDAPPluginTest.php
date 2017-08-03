@@ -32,12 +32,12 @@ class UserLDAPPluginTest extends \Test\TestCase {
 	/**
 	 * @return UserPluginManager
 	 */
-	private function getPluginManagerMock() {
-		return $this->getMockBuilder('\OCA\User_LDAP\UserPluginManager')->getMock();
+	private function getPluginManager() {
+		return new UserPluginManager();
 	}
 
 	public function testCreateUser() {
-		$pluginManager = $this->getPluginManagerMock();
+		$pluginManager = $this->getPluginManager();
 
 		$plugin = $this->getMockBuilder('OCA\User_LDAP\Tests\LDAPUserPluginDummy')
 			->setMethods(['respondToActions', 'createUser'])
@@ -59,7 +59,7 @@ class UserLDAPPluginTest extends \Test\TestCase {
 	}
 
 	public function testSetPassword() {
-		$pluginManager = $this->getPluginManagerMock();
+		$pluginManager = $this->getPluginManager();
 
 		$plugin = $this->getMockBuilder('OCA\User_LDAP\Tests\LDAPUserPluginDummy')
 			->setMethods(['respondToActions', 'setPassword'])
@@ -81,7 +81,7 @@ class UserLDAPPluginTest extends \Test\TestCase {
 	}
 
 	public function testCheckPassword() {
-		$pluginManager = $this->getPluginManagerMock();
+		$pluginManager = $this->getPluginManager();
 
 		$plugin = $this->getMockBuilder('OCA\User_LDAP\Tests\LDAPUserPluginDummy')
 			->setMethods(['respondToActions', 'checkPassword'])
@@ -103,7 +103,7 @@ class UserLDAPPluginTest extends \Test\TestCase {
 	}
 
 	public function testGetHome() {
-		$pluginManager = $this->getPluginManagerMock();
+		$pluginManager = $this->getPluginManager();
 
 		$plugin = $this->getMockBuilder('OCA\User_LDAP\Tests\LDAPUserPluginDummy')
 			->setMethods(['respondToActions', 'getHome'])
@@ -124,7 +124,7 @@ class UserLDAPPluginTest extends \Test\TestCase {
 	}
 
 	public function testGetDisplayName() {
-		$pluginManager = $this->getPluginManagerMock();
+		$pluginManager = $this->getPluginManager();
 
 		$plugin = $this->getMockBuilder('OCA\User_LDAP\Tests\LDAPUserPluginDummy')
 			->setMethods(['respondToActions', 'getDisplayName'])
@@ -145,7 +145,7 @@ class UserLDAPPluginTest extends \Test\TestCase {
 	}
 
 	public function testSetDisplayName() {
-		$pluginManager = $this->getPluginManagerMock();
+		$pluginManager = $this->getPluginManager();
 
 		$plugin = $this->getMockBuilder('OCA\User_LDAP\Tests\LDAPUserPluginDummy')
 			->setMethods(['respondToActions', 'setDisplayName'])
@@ -166,7 +166,7 @@ class UserLDAPPluginTest extends \Test\TestCase {
 		$pluginManager->setDisplayName('user', 'password');		}
 
 	public function testCanChangeAvatar() {
-		$pluginManager = $this->getPluginManagerMock();
+		$pluginManager = $this->getPluginManager();
 
 		$plugin = $this->getMockBuilder('OCA\User_LDAP\Tests\LDAPUserPluginDummy')
 			->setMethods(['respondToActions', 'canChangeAvatar'])
@@ -187,7 +187,7 @@ class UserLDAPPluginTest extends \Test\TestCase {
 	}
 
 	public function testCountUsers() {
-		$pluginManager = $this->getPluginManagerMock();
+		$pluginManager = $this->getPluginManager();
 
 		$plugin = $this->getMockBuilder('OCA\User_LDAP\Tests\LDAPUserPluginDummy')
 			->setMethods(['respondToActions', 'countUsers'])
@@ -205,7 +205,7 @@ class UserLDAPPluginTest extends \Test\TestCase {
 	}
 
 	public function testDeleteUser() {
-		$pluginManager = $this->getPluginManagerMock();
+		$pluginManager = $this->getPluginManager();
 
 		$plugin = $this->getMockBuilder('OCA\User_LDAP\Tests\LDAPUserPluginDummy')
 			->setMethods(['respondToActions', 'canDeleteUser','deleteUser'])
