@@ -1092,6 +1092,7 @@ class Group_LDAP extends BackendUtility implements \OCP\GroupInterface, IGroupLD
 	}
 
 	/**
+	 * create a group
 	 * @param string $gid
 	 * @return bool
 	 */
@@ -1099,6 +1100,8 @@ class Group_LDAP extends BackendUtility implements \OCP\GroupInterface, IGroupLD
 		if ($this->groupPluginManager->implementsActions(Backend::CREATE_GROUP)) {
 			if ($ret = $this->groupPluginManager->createGroup($gid)) {
 				$this->access->connection->clearCache();
+				#update the list of groups in nextcloud internal db
+				$groups = $this->getGroups();
 			}
 			return $ret;
 		}
@@ -1114,6 +1117,8 @@ class Group_LDAP extends BackendUtility implements \OCP\GroupInterface, IGroupLD
 		if ($this->groupPluginManager->implementsActions(Backend::DELETE_GROUP)) {
 			if ($ret = $this->groupPluginManager->deleteGroup($gid)) {
 				$this->access->connection->clearCache();
+				#delete group in nextcloud internal db
+				$this->access->getGroupMapper()->unmap($gid);
 			}
 			return $ret;
 		}
@@ -1152,6 +1157,18 @@ class Group_LDAP extends BackendUtility implements \OCP\GroupInterface, IGroupLD
 				$this->access->connection->clearCache();
 			}
 			return $ret;
+		}
+		return null;
+	}
+
+	/**
+	 * Gets group details
+	 * @param string $gid Name of the group
+	 * @return array | null
+	 */
+	public function getGroupDetails($gid) {
+		if ($this->groupPluginManager->implementsActions(Backend::GROUP_DETAILS)) {
+			return $this->groupPluginManager->getGroupDetails($gid);
 		}
 		return null;
 	}
