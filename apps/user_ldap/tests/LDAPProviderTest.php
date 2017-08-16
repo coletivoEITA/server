@@ -270,6 +270,52 @@ class LDAPProviderTest extends \Test\TestCase {
 		$ldapProvider = $this->getLDAPProvider($server);
 		$this->assertTrue($ldapProvider->getLDAPConnection('existing_user'));
 	}
+
+	/**
+	 * @expectedException \Exception
+	 * @expectedExceptionMessage Group id not found in LDAP
+	 */
+	public function testGetGroupLDAPConnectionGroupIDNotFound() {
+		$userBackend = $this->getMockBuilder('OCA\User_LDAP\User_LDAP')
+			->disableOriginalConstructor()
+			->getMock();
+
+		$groupBackend = $this->getMockBuilder('OCA\User_LDAP\Group_LDAP')
+			->setMethods(['groupExists'])
+			->disableOriginalConstructor()
+			->getMock();
+
+		$groupBackend->expects($this->any())->method('groupExists')->willReturn(false);
+
+		$server = $this->getServerMock($userBackend, $groupBackend);
+
+		$ldapProvider = $this->getLDAPProvider($server);
+		$ldapProvider->getGroupLDAPConnection('nonexisting_group');
+	}
+
+	public function testGetGroupLDAPConnection() {
+		$userBackend = $this->getMockBuilder('OCA\User_LDAP\User_LDAP')
+			->disableOriginalConstructor()
+			->getMock();
+
+		$groupBackend = $this->getMockBuilder('OCA\User_LDAP\Group_LDAP')
+			->setMethods(['groupExists','getNewLDAPConnection'])
+			->disableOriginalConstructor()
+			->getMock();
+
+		$groupBackend->expects($this->any())
+			->method('groupExists')
+			->willReturn(true);
+
+		$groupBackend->expects($this->any())
+			->method('getNewLDAPConnection')
+			->willReturn(true);
+
+		$server = $this->getServerMock($userBackend, $groupBackend);
+
+		$ldapProvider = $this->getLDAPProvider($server);
+		$this->assertTrue($ldapProvider->getGroupLDAPConnection('existing_group'));
+	}
 	
 	/**
 	 * @expectedException \Exception
