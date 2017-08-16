@@ -81,6 +81,14 @@ interface ILDAPProvider {
 	 * @since 11.0.0
 	 */
 	public function getLDAPConnection($uid);
+
+	/**
+	 * Return a new LDAP connection resource for the specified group.
+	 * @param string $gid group id
+	 * @return resource of the LDAP connection
+	 * @since 13.0.0
+	 */
+	public function getGroupLDAPConnection($gid);
 	
 	/**
 	 * Get the LDAP base for users.

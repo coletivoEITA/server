@@ -1172,4 +1172,17 @@ class Group_LDAP extends BackendUtility implements \OCP\GroupInterface, IGroupLD
 		}
 		return null;
 	}
+
+	/**
+	 * Return LDAP connection resource from a cloned connection.
+	 * The cloned connection needs to be closed manually.
+	 * of the current access.
+	 * @param string $gid
+	 * @return resource of the LDAP connection
+	 */
+	public function getNewLDAPConnection($gid) {
+		$connection = clone $this->access->getConnection();
+		return $connection->getConnectionResource();
+	}
+
 }

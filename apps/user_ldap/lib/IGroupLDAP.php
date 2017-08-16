@@ -30,9 +30,16 @@ interface IGroupLDAP {
 
 	/**
 	 * Return access for LDAP interaction.
-	 * @param string $uid
+	 * @param string $gid
 	 * @return Access instance of Access for LDAP interaction
 	 */
 	public function getLDAPAccess($gid);
+
+	/**
+	 * Return a new LDAP connection for the specified group.
+	 * @param string $gid
+	 * @return resource of the LDAP connection
+	 */
+	public function getNewLDAPConnection($gid);
 
 }

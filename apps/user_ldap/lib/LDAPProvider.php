@@ -156,6 +156,20 @@ class LDAPProvider implements ILDAPProvider, IDeletionFlagSupport {
 		}
 		return $this->userBackend->getNewLDAPConnection($uid);
 	}
+
+	/**
+	 * Return a new LDAP connection resource for the specified user.
+	 * The connection must be closed manually.
+	 * @param string $uid user id
+	 * @return resource of the LDAP connection
+	 * @throws \Exception if user id was not found in LDAP
+	 */
+	public function getGroupLDAPConnection($gid) {
+		if(!$this->groupBackend->groupExists($gid)){
+			throw new \Exception('Group id not found in LDAP');
+		}
+		return $this->groupBackend->getNewLDAPConnection($gid);
+	}
 	
 	/**
 	 * Get the LDAP base for users.
