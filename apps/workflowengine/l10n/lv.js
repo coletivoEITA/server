@@ -1,7 +1,9 @@
 OC.L10N.register(
     "workflowengine",
     {
+    "Saved" : "Saglabāts",
     "Saving failed:" : "Saglabāšana neizdevās:",
+    "File MIME type" : "Faila MIME tips",
     "is" : "ir",
     "is not" : "nav",
     "matches" : "atbilst",
@@ -57,6 +59,7 @@ OC.L10N.register(
     "Check %s is invalid" : "Pārbaude %s ir nederīga",
     "Check #%s does not exist" : "Pārbaude #%s nepastāv",
     "Workflow" : "Darbplūsma",
+    "Files workflow engine" : "Faila darblūsmas programma",
     "Open documentation" : "Atvērt dokumentāciju",
     "Add rule group" : "Pievienot kārtulu grupas",
     "Short rule description" : "Īss kārtulas apraksts",

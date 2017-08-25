@@ -247,6 +247,9 @@ pipeline:
     image: nextcloudci/integration-php7.0:integration-php7.0-3
     commands:
       - ./occ maintenance:install --admin-pass=admin
+      - ./occ config:system:set redis host --value=cache
+      - ./occ config:system:set redis port --value=6379 --type=integer
+      - ./occ config:system:set redis timeout --value=0 --type=integer
       - ./occ config:system:set --type string --value "\\OC\\Memcache\\Redis" memcache.local
       - ./occ config:system:set --type string --value "\\OC\\Memcache\\Redis" memcache.distributed
       - ./occ app:enable testing
@@ -456,21 +459,21 @@ pipeline:
   acceptance-access-levels:
       image: nextcloudci/php7.0:php7.0-7
       commands:
-        - tests/acceptance/run-local.sh --timeout-multiplier 10 allow-git-repository-modifications features/access-levels.feature
+        - tests/acceptance/run-local.sh --timeout-multiplier 10 --nextcloud-server-domain acceptance-access-levels --selenium-server selenium:4444 allow-git-repository-modifications features/access-levels.feature
       when:
         matrix:
           TESTS-ACCEPTANCE: access-levels
   acceptance-app-files:
       image: nextcloudci/php7.0:php7.0-7
       commands:
-        - tests/acceptance/run-local.sh --timeout-multiplier 10 allow-git-repository-modifications features/app-files.feature
+        - tests/acceptance/run-local.sh --timeout-multiplier 10 --nextcloud-server-domain acceptance-app-files --selenium-server selenium:4444 allow-git-repository-modifications features/app-files.feature
       when:
         matrix:
           TESTS-ACCEPTANCE: app-files
   acceptance-login:
       image: nextcloudci/php7.0:php7.0-7
       commands:
-        - tests/acceptance/run-local.sh --timeout-multiplier 10 allow-git-repository-modifications features/login.feature
+        - tests/acceptance/run-local.sh --timeout-multiplier 10 --nextcloud-server-domain acceptance-login --selenium-server selenium:4444 allow-git-repository-modifications features/login.feature
       when:
         matrix:
           TESTS-ACCEPTANCE: login
@@ -577,13 +580,13 @@ matrix:
     - TESTS: caldavtester-new-endpoint
     - TESTS: carddavtester-new-endpoint
     - TESTS: carddavtester-old-endpoint
-    - TESTS: object-store
-      OBJECT_STORE: s3
+#    - TESTS: object-store
+#      OBJECT_STORE: s3
     - TESTS: sqlite-php7.0-samba-native
     - TESTS: sqlite-php7.0-samba-non-native
     - TEST: memcache-memcached
-    - TEST: memcache-redis-cluster
-      ENABLE_REDIS_CLUSTER: true
+#    - TEST: memcache-redis-cluster
+#      ENABLE_REDIS_CLUSTER: true
     - TESTS: sqlite-php7.0-webdav-apache
       ENABLE_REDIS: true
     - DB: NODB
@@ -629,7 +632,7 @@ services:
     image: postgres
     environment:
       - POSTGRES_USER=oc_autotest
-      - POSTGRES_PASSWORD=oc_autotest
+      - POSTGRES_PASSWORD=owncloud
     when:
       matrix:
         DB: postgres

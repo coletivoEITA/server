@@ -2140,6 +2140,7 @@
 				} catch (error) {
 					input.attr('title', error);
 					input.tooltip({placement: 'right', trigger: 'manual'});
+					input.tooltip('fixTitle');
 					input.tooltip('show');
 					input.addClass('error');
 				}
@@ -2154,6 +2155,7 @@
 				} catch (error) {
 					input.attr('title', error);
 					input.tooltip({placement: 'right', trigger: 'manual'});
+					input.tooltip('fixTitle');
 					input.tooltip('show');
 					input.addClass('error');
 				}
@@ -2735,6 +2737,7 @@
 
 				if (self.$el.hasClass('hidden')) {
 					// do not upload to invisible lists
+					e.preventDefault();
 					return false;
 				}
 
@@ -2746,6 +2749,7 @@
 					&& !self.$el.has(dropTarget).length // dropped inside list
 					&& !dropTarget.is(self.$container) // dropped on main container
 					) {
+					e.preventDefault();
 					return false;
 				}
 
@@ -3018,6 +3022,21 @@
 			if (this.breadcrumb) {
 				this.breadcrumb.addDetailView(detailView);
 			}
+		},
+
+		/**
+		 * Returns the registered detail views.
+		 *
+		 * @return null|Array<OCA.Files.DetailFileInfoView> an array with the
+		 *         registered DetailFileInfoViews, or null if the details view
+		 *         is not enabled.
+		 */
+		getRegisteredDetailViews: function() {
+			if (this._detailsView) {
+				return this._detailsView.getDetailViews();
+			}
+
+			return null;
 		}
 	};
 

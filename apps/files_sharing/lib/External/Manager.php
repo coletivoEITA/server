@@ -30,6 +30,7 @@
 namespace OCA\Files_Sharing\External;
 
 use OC\Files\Filesystem;
+use OCA\Files_Sharing\Helper;
 use OCP\Files;
 use OCP\Files\Storage\IStorageFactory;
 use OCP\Http\Client\IClientService;
@@ -199,8 +200,9 @@ class Manager {
 
 		if ($share) {
 			\OC_Util::setupFS($this->uid);
-			$mountPoint = Files::buildNotExistingFileName('/', $share['name']);
-			$mountPoint = Filesystem::normalizePath('/' . $mountPoint);
+			$shareFolder = Helper::getShareFolder();
+			$mountPoint = Files::buildNotExistingFileName($shareFolder, $share['name']);
+			$mountPoint = Filesystem::normalizePath($mountPoint);
 			$hash = md5($mountPoint);
 
 			$acceptShare = $this->connection->prepare('
@@ -364,8 +366,13 @@ class Manager {
 		$result = $getShare->execute(array($hash, $this->uid));
 
 		if ($result) {
-			$share = $getShare->fetch();
-			$this->sendFeedbackToRemote($share['remote'], $share['share_token'], $share['remote_id'], 'decline');
+			try {
+				$share = $getShare->fetch();
+				$this->sendFeedbackToRemote($share['remote'], $share['share_token'], $share['remote_id'], 'decline');
+			} catch (\Exception $e) {
+				// if we fail to notify the remote (probably cause the remote is down)
+				// we still want the share to be gone to prevent undeletable remotes
+			}
 		}
 		$getShare->closeCursor();
 

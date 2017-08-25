@@ -164,6 +164,17 @@ $CONFIG = array(
 'default_language' => 'en',
 
 /**
+ * With this setting a language can be forced for all users. If a language is
+ * forced, the users are also unable to change their language in the personal
+ * settings. If users shall be unable to change their language, but users have
+ * different languages, this value can be set to ``true`` instead of a language
+ * code.
+ *
+ * Defaults to ``false``
+ */
+'force_language' => 'en',
+
+/**
  * Set the default app to open on login. Use the app names as they appear in the
  * URL after clicking them in the Apps menu, such as documents, calendar, and
  * gallery. You can use a comma-separated list of app names, so if the first
@@ -891,10 +902,6 @@ $CONFIG = array(
  *  - OC\Preview\TIFF
  *  - OC\Preview\Font
  *
- * .. note:: Troubleshooting steps for the MS Word previews are available
- *    at the :doc:`../configuration_files/collaborative_documents_configuration`
- *    section of the Administrators Manual.
- *
  * The following providers are not available in Microsoft Windows:
  *
  *  - OC\Preview\Movie
@@ -965,6 +972,13 @@ $CONFIG = array(
  * Defaults to ``\OC\SystemTag\ManagerFactory``
  */
 'systemtags.managerFactory' => '\OC\SystemTag\ManagerFactory',
+
+/**
+ * Replaces the default mail template layout. This can be utilized if the
+ * options to modify the mail texts with the theming app is not enough.
+ * The class must extend  ``\OC\Mail\EMailTemplate``
+ */
+'mail_template_class' => '\OC\Mail\EMailTemplate',
 
 /**
  * Maintenance
@@ -1244,7 +1258,7 @@ $CONFIG = array(
  *
  * If you want to convert an existing 3-byte setup into a 4-byte setup please
  * set the parameters in MySQL as mentioned below and run the migration command:
- *  ./occ db:convert-mysql-charset
+ * ./occ db:convert-mysql-charset
  * The config setting will be set automatically after a successful run.
  *
  * Consult the documentation for more details.
@@ -1540,10 +1554,5 @@ $CONFIG = array(
  * If you want to allow federation outside of your environment set it to 'global'
  */
 'gs.federation' => 'internal',
-
-/**
- * show group membership on the personal page
- */
-'settings.personal.showGroupMembership' => true
 
 );

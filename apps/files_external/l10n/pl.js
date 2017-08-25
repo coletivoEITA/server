@@ -24,13 +24,11 @@ OC.L10N.register(
     "Saving..." : "Zapisywanie...",
     "Save" : "Zapisz",
     "Empty response from the server" : "Puste odpowiedzi z serwera",
-    "Couldn't access. Please logout and login to activate this mount point" : "Nie można uzyskać dostępu. Należy wylogować się i ponownie zalogować się, aby włączyć ten punkt montowania",
     "Couldn't get the information from the remote server: {code} {type}" : "Nie można otrzymać informacji od zdalnego serwera: {code} {type}",
     "Couldn't get the list of external mount points: {type}" : "Nie udało się uzyskać listy zewnętrznych punktów montowania: {type}",
     "There was an error with message: " : "Wystąpił błąd o treści:",
     "External mount error" : "Błąd przy montowaniu zewnętrznym",
     "external-storage" : "magazyn zewnętrzny",
-    "Couldn't get the list of Windows network drive mount points: empty response from the server" : "Nie udało się uzyskać listy punktów montowania dysku sieciowego z systemu Windows: puste odpowiedzi z serwera",
     "Some of the configured external mount points are not connected. Please click on the red row(s) for more information" : "Niektóre skonfigurowane zewnętrzne punkty montowania są nie podłączone. Proszę kliknąć na czerwony rząd (y), aby uzyskać więcej informacji",
     "Please enter the credentials for the {mount} mount" : "Proszę wprowadzić poświadczenia dla {mount} montażu",
     "Username" : "Nazwa użytkownika",
@@ -130,4 +128,4 @@ OC.L10N.register(
     "Storage with id \"%i\" not found" : "Magazyn o ID \"%i\" nie został znaleziony",
     "Storage with id \"%i\" is not user editable" : "Magazyn o ID \"%i\" nie może być edytowany przez użytkowników"
 },
-"nplurals=4; plural=(n==1 ? 0 : (n%10>=2 && n%10<=4) && (n%100<12 || n%100>=14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);");
+"nplurals=4; plural=(n==1 ? 0 : (n%10>=2 && n%10<=4) && (n%100<12 || n%100>14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);");
