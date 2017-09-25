@@ -111,7 +111,7 @@ class Search extends Command {
 		$this->validateOffsetAndLimit($offset, $limit);
 
 		if($input->getOption('group')) {
-			$proxy = new Group_Proxy($configPrefixes, $ldapWrapper);
+			$proxy = new Group_Proxy($configPrefixes, $ldapWrapper, \OC::$server->query('LDAPGroupPluginManager'));
 			$getMethod = 'getGroups';
 			$printID = false;
 			// convert the limit of groups to null. This will show all the groups available instead of
@@ -120,7 +120,7 @@ class Search extends Command {
 				$limit = null;
 			}
 		} else {
-			$proxy = new User_Proxy($configPrefixes, $ldapWrapper, $this->ocConfig, \OC::$server->getNotificationManager());
+			$proxy = new User_Proxy($configPrefixes, $ldapWrapper, $this->ocConfig, \OC::$server->getNotificationManager(), \OC::$server->query('LDAPUserPluginManager'));
 			$getMethod = 'getDisplayNames';
 			$printID = true;
 		}

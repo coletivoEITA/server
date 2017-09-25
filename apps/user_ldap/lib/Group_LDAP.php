@@ -1076,7 +1076,7 @@ class Group_LDAP extends BackendUtility implements \OCP\GroupInterface, IGroupLD
 	* @return boolean
 	*
 	* Returns the supported actions as int to be
-	* compared with OC_USER_BACKEND_CREATE_USER etc.
+	* compared with \OC\Group\Backend::CREATE_GROUP etc.
 	*/
 	public function implementsActions($actions) {
 		return (bool)((\OC\Group\Backend::COUNT_USERS |
@@ -1092,17 +1092,20 @@ class Group_LDAP extends BackendUtility implements \OCP\GroupInterface, IGroupLD
 	}
 
 	/**
+	 * create a group
 	 * @param string $gid
 	 * @return bool
 	 */
 	public function createGroup($gid) {
 		if ($this->groupPluginManager->implementsActions(Backend::CREATE_GROUP)) {
-			if ($this->groupPluginManager->createGroup($gid)) {
+			if ($ret = $this->groupPluginManager->createGroup($gid)) {
 				$this->access->connection->clearCache();
-				return true;
+				#update the list of groups in nextcloud internal db
+				$groups = $this->getGroups();
 			}
+			return $ret;
 		}
-		return false;
+		return null;
 	}
 
 	/**
@@ -1112,12 +1115,14 @@ class Group_LDAP extends BackendUtility implements \OCP\GroupInterface, IGroupLD
 	 */
 	public function deleteGroup($gid) {
 		if ($this->groupPluginManager->implementsActions(Backend::DELETE_GROUP)) {
-			if ($this->groupPluginManager->deleteGroup($gid)) {
+			if ($ret = $this->groupPluginManager->deleteGroup($gid)) {
 				$this->access->connection->clearCache();
-				return true;
+				#delete group in nextcloud internal db
+				$this->access->getGroupMapper()->unmap($gid);
 			}
+			return $ret;
 		}
-		return false;
+		return null;
 	}
 
 	/**
@@ -1130,12 +1135,12 @@ class Group_LDAP extends BackendUtility implements \OCP\GroupInterface, IGroupLD
 	 */
 	public function addToGroup($uid, $gid) {
 		if ($this->groupPluginManager->implementsActions(Backend::ADD_TO_GROUP)) {
-			if ($this->groupPluginManager->addToGroup($uid, $gid)) {
+			if ($ret = $this->groupPluginManager->addToGroup($uid, $gid)) {
 				$this->access->connection->clearCache();
-				return true;
 			}
+			return $ret;
 		}
-		return false;
+		return null;
 	}
 
 	/**
@@ -1148,11 +1153,36 @@ class Group_LDAP extends BackendUtility implements \OCP\GroupInterface, IGroupLD
 	 */
 	public function removeFromGroup($uid, $gid) {
 		if ($this->groupPluginManager->implementsActions(Backend::REMOVE_FROM_GROUP)) {
-			if ($this->groupPluginManager->removeFromGroup($uid, $gid)) {
+			if ($ret = $this->groupPluginManager->removeFromGroup($uid, $gid)) {
 				$this->access->connection->clearCache();
-				return true;
 			}
+			return $ret;
 		}
-		return false;
+		return null;
 	}
+
+	/**
+	 * Gets group details
+	 * @param string $gid Name of the group
+	 * @return array | null
+	 */
+	public function getGroupDetails($gid) {
+		if ($this->groupPluginManager->implementsActions(Backend::GROUP_DETAILS)) {
+			return $this->groupPluginManager->getGroupDetails($gid);
+		}
+		return null;
+	}
+
+	/**
+	 * Return LDAP connection resource from a cloned connection.
+	 * The cloned connection needs to be closed manually.
+	 * of the current access.
+	 * @param string $gid
+	 * @return resource of the LDAP connection
+	 */
+	public function getNewLDAPConnection($gid) {
+		$connection = clone $this->access->getConnection();
+		return $connection->getConnectionResource();
+	}
+
 }

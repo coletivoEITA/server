@@ -103,7 +103,7 @@ class LDAPProvider implements ILDAPProvider, IDeletionFlagSupport {
 		if(!$this->groupBackend->groupExists($gid)){
 			throw new \Exception('Group id not found in LDAP');
 		}
-		$result = $this->groupBackend->getLDAPAccess()->groupname2dn($gid);
+		$result = $this->groupBackend->getLDAPAccess($gid)->groupname2dn($gid);
 		if(!$result){
 			throw new \Exception('Translation to LDAP DN unsuccessful');
 		}
@@ -155,6 +155,20 @@ class LDAPProvider implements ILDAPProvider, IDeletionFlagSupport {
 			throw new \Exception('User id not found in LDAP');
 		}
 		return $this->userBackend->getNewLDAPConnection($uid);
+	}
+
+	/**
+	 * Return a new LDAP connection resource for the specified user.
+	 * The connection must be closed manually.
+	 * @param string $uid user id
+	 * @return resource of the LDAP connection
+	 * @throws \Exception if user id was not found in LDAP
+	 */
+	public function getGroupLDAPConnection($gid) {
+		if(!$this->groupBackend->groupExists($gid)){
+			throw new \Exception('Group id not found in LDAP');
+		}
+		return $this->groupBackend->getNewLDAPConnection($gid);
 	}
 	
 	/**
@@ -251,13 +265,13 @@ class LDAPProvider implements ILDAPProvider, IDeletionFlagSupport {
 	 * Get the LDAP type of association between users and groups
 	 * @param string $uid user id
 	 * @return string the configuration, one of: 'memberUid', 'uniqueMember', 'member', 'gidNumber'
-	 * @throws \Exception if user id was not found in LDAP
+	 * @throws \Exception if group id was not found in LDAP
 	 */
-	public function getLDAPGroupMemberAssocAttr($gid) {
+	public function getLDAPGroupMemberAssoc($gid) {
 		if(!$this->groupBackend->groupExists($gid)){
 			throw new \Exception('Group id not found in LDAP');
 		}
-		return $this->groupBackend->getLDAPAccess($gid)->getConnection()->getConfiguration()['ldap_group_member_assoc_attr'];
+		return $this->groupBackend->getLDAPAccess($gid)->getConnection()->getConfiguration()['ldap_group_member_assoc_attribute'];
 	}
 
 }

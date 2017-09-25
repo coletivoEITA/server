@@ -1,7 +1,9 @@
 <?php
 /**
  *
- * @copyright Copyright (c) 2017, Vinicius Brand (vinicius@eita.org.br)
+ * @copyright Copyright (c) 2017, EITA Cooperative (eita.org.br)
+ *
+ * @author Vinicius Brand <vinicius@eita.org.br>
  *
  * @license GNU AGPL version 3 or any later version
  *
@@ -25,4 +27,19 @@ namespace OCA\User_LDAP;
 interface IGroupLDAP {
 
 	//Used by LDAPProvider
+
+	/**
+	 * Return access for LDAP interaction.
+	 * @param string $gid
+	 * @return Access instance of Access for LDAP interaction
+	 */
+	public function getLDAPAccess($gid);
+
+	/**
+	 * Return a new LDAP connection for the specified group.
+	 * @param string $gid
+	 * @return resource of the LDAP connection
+	 */
+	public function getNewLDAPConnection($gid);
+
 }

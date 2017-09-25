@@ -81,6 +81,14 @@ interface ILDAPProvider {
 	 * @since 11.0.0
 	 */
 	public function getLDAPConnection($uid);
+
+	/**
+	 * Return a new LDAP connection resource for the specified group.
+	 * @param string $gid group id
+	 * @return resource of the LDAP connection
+	 * @since 13.0.0
+	 */
+	public function getGroupLDAPConnection($gid);
 	
 	/**
 	 * Get the LDAP base for users.
@@ -133,5 +141,13 @@ interface ILDAPProvider {
 	 */
 	public function getLDAPEmailField($uid);
 
+	/**
+	 * Get the LDAP attribute name for the type of association betweeen users and groups
+	 * @param string $gid group id
+	 * @return string the configuration, one of: 'memberUid', 'uniqueMember', 'member', 'gidNumber'
+	 * @throws \Exception if group id was not found in LDAP
+	 * @since 13.0.0
+	 */
+	public function getLDAPGroupMemberAssoc($gid);
 
 }

@@ -29,6 +29,7 @@
 
 namespace OCA\User_LDAP\Tests;
 
+use OC\Group\Backend;
 use OCA\User_LDAP\Group_LDAP as GroupLDAP;
 use OCA\User_LDAP\ILDAPWrapper;
 
@@ -148,6 +149,29 @@ class Group_LDAPTest extends \Test\TestCase {
 
 		$this->assertSame(2, $users);
 	}
+
+	public function testCountUsersWithPlugin() {
+		$pluginManager = $this->getMockBuilder('\OCA\User_LDAP\GroupPluginManager')
+			->setMethods(['implementsActions','countUsersInGroup'])
+			->getMock();
+
+		$pluginManager->expects($this->once())
+			->method('implementsActions')
+			->with(Backend::COUNT_USERS)
+			->willReturn(true);
+
+		$pluginManager->expects($this->once())
+			->method('countUsersInGroup')
+			->with('gid', 'search')
+			->willReturn(42);
+
+		$ldap = new GroupLDAP(
+			$this->getAccessMock(),
+			$pluginManager
+		);
+
+		$this->assertEquals($ldap->countUsersInGroup('gid', 'search'),42);
+	}	
 
 	public function testGidNumber2NameSuccess() {
 		$access = $this->getAccessMock();
@@ -695,4 +719,221 @@ class Group_LDAPTest extends \Test\TestCase {
 		$groupsAgain = $groupBackend->getUserGroups('userX');
 		$this->assertEquals(['group1', 'group2'], $groupsAgain);
 	}
+
+	public function testCreateGroupWithPlugin() {
+		$pluginManager = $this->getMockBuilder('\OCA\User_LDAP\GroupPluginManager')
+			->setMethods(['implementsActions','createGroup'])
+			->getMock();
+
+		$pluginManager->expects($this->once())
+			->method('implementsActions')
+			->with(Backend::CREATE_GROUP)
+			->willReturn(true);
+
+		$pluginManager->expects($this->once())
+			->method('createGroup')
+			->with('gid')
+			->willReturn('result');
+
+		$ldap = new GroupLDAP(
+			$this->getAccessMock(),
+			$pluginManager
+		);
+
+		$this->assertEquals($ldap->createGroup('gid'),'result');
+	}
+
+	public function testCreateGroupFailing() {
+		$pluginManager = $this->getMockBuilder('\OCA\User_LDAP\GroupPluginManager')
+			->setMethods(['implementsActions', 'createGroup'])
+			->getMock();
+
+		$pluginManager->expects($this->once())
+			->method('implementsActions')
+			->with(Backend::CREATE_GROUP)
+			->willReturn(false);
+
+		$ldap = new GroupLDAP(
+			$this->getAccessMock(),
+			$pluginManager
+		);
+
+		$this->assertNull($ldap->createGroup('gid'));
+	}
+
+	public function testDeleteGroupWithPlugin() {
+		$pluginManager = $this->getMockBuilder('\OCA\User_LDAP\GroupPluginManager')
+			->setMethods(['implementsActions','deleteGroup'])
+			->getMock();
+
+		$pluginManager->expects($this->once())
+			->method('implementsActions')
+			->with(Backend::DELETE_GROUP)
+			->willReturn(true);
+
+		$pluginManager->expects($this->once())
+			->method('deleteGroup')
+			->with('gid')
+			->willReturn('result');
+
+		$access = $this->getAccessMock();
+
+		$mapper = $this->getMockBuilder('\OCA\User_LDAP\Mapping\GroupMapping')
+			->setMethods(['unmap'])
+			->disableOriginalConstructor()
+			->getMock();
+
+		$access->expects($this->any())
+			->method('getGroupMapper')
+			->will($this->returnValue($mapper));
+
+		$ldap = new GroupLDAP(
+			$access,
+			$pluginManager
+		);
+
+		$this->assertEquals($ldap->deleteGroup('gid'),'result');
+	}
+
+	public function testDeleteGroupFailing() {
+		$pluginManager = $this->getMockBuilder('\OCA\User_LDAP\GroupPluginManager')
+			->setMethods(['implementsActions', 'deleteGroup'])
+			->getMock();
+
+		$pluginManager->expects($this->once())
+			->method('implementsActions')
+			->with(Backend::DELETE_GROUP)
+			->willReturn(false);
+
+		$ldap = new GroupLDAP(
+			$this->getAccessMock(),
+			$pluginManager
+		);
+
+		$this->assertNull($ldap->deleteGroup('gid'));
+	}
+
+	public function testAddToGroupWithPlugin() {
+		$pluginManager = $this->getMockBuilder('\OCA\User_LDAP\GroupPluginManager')
+			->setMethods(['implementsActions','addToGroup'])
+			->getMock();
+
+		$pluginManager->expects($this->once())
+			->method('implementsActions')
+			->with(Backend::ADD_TO_GROUP)
+			->willReturn(true);
+
+		$pluginManager->expects($this->once())
+			->method('addToGroup')
+			->with('uid', 'gid')
+			->willReturn('result');
+
+		$ldap = new GroupLDAP(
+			$this->getAccessMock(),
+			$pluginManager
+		);
+
+		$this->assertEquals($ldap->addToGroup('uid', 'gid'),'result');
+	}
+
+	public function testAddToGroupFailing() {
+		$pluginManager = $this->getMockBuilder('\OCA\User_LDAP\GroupPluginManager')
+			->setMethods(['implementsActions', 'addToGroup'])
+			->getMock();
+
+		$pluginManager->expects($this->once())
+			->method('implementsActions')
+			->with(Backend::ADD_TO_GROUP)
+			->willReturn(false);
+
+		$ldap = new GroupLDAP(
+			$this->getAccessMock(),
+			$pluginManager
+		);
+
+		$this->assertNull($ldap->addToGroup('uid', 'gid'));
+	}
+
+	public function testRemoveFromGroupWithPlugin() {
+		$pluginManager = $this->getMockBuilder('\OCA\User_LDAP\GroupPluginManager')
+			->setMethods(['implementsActions','removeFromGroup'])
+			->getMock();
+
+		$pluginManager->expects($this->once())
+			->method('implementsActions')
+			->with(Backend::REMOVE_FROM_GROUP)
+			->willReturn(true);
+
+		$pluginManager->expects($this->once())
+			->method('removeFromGroup')
+			->with('uid', 'gid')
+			->willReturn('result');
+
+		$ldap = new GroupLDAP(
+			$this->getAccessMock(),
+			$pluginManager
+		);
+
+		$this->assertEquals($ldap->removeFromGroup('uid', 'gid'),'result');
+	}
+
+	public function testRemoveFromGroupFailing() {
+		$pluginManager = $this->getMockBuilder('\OCA\User_LDAP\GroupPluginManager')
+			->setMethods(['implementsActions', 'removeFromGroup'])
+			->getMock();
+
+		$pluginManager->expects($this->once())
+			->method('implementsActions')
+			->with(Backend::REMOVE_FROM_GROUP)
+			->willReturn(false);
+
+		$ldap = new GroupLDAP(
+			$this->getAccessMock(),
+			$pluginManager
+		);
+
+		$this->assertNull($ldap->removeFromGroup('uid', 'gid'));
+	}
+
+	public function testGetGroupDetailsWithPlugin() {
+		$pluginManager = $this->getMockBuilder('\OCA\User_LDAP\GroupPluginManager')
+			->setMethods(['implementsActions','getGroupDetails'])
+			->getMock();
+
+		$pluginManager->expects($this->once())
+			->method('implementsActions')
+			->with(Backend::GROUP_DETAILS)
+			->willReturn(true);
+
+		$pluginManager->expects($this->once())
+			->method('getGroupDetails')
+			->with('gid')
+			->willReturn('result');
+
+		$ldap = new GroupLDAP(
+			$this->getAccessMock(),
+			$pluginManager
+		);
+
+		$this->assertEquals($ldap->getGroupDetails('gid'),'result');
+	}
+
+	public function testGetGroupDetailsFailing() {
+		$pluginManager = $this->getMockBuilder('\OCA\User_LDAP\GroupPluginManager')
+			->setMethods(['implementsActions', 'getGroupDetails'])
+			->getMock();
+
+		$pluginManager->expects($this->once())
+			->method('implementsActions')
+			->with(Backend::GROUP_DETAILS)
+			->willReturn(false);
+
+		$ldap = new GroupLDAP(
+			$this->getAccessMock(),
+			$pluginManager
+		);
+
+		$this->assertNull($ldap->getGroupDetails('gid'));
+	}	
+
 }

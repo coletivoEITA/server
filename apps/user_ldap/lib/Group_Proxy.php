@@ -245,7 +245,7 @@ class Group_Proxy extends Proxy implements \OCP\GroupInterface, IGroupLDAP {
 	 * @return boolean
 	 *
 	 * Returns the supported actions as int to be
-	 * compared with OC_USER_BACKEND_CREATE_USER etc.
+	 * compared with \OC\Group\Backend::CREATE_GROUP etc.
 	 */
 	public function implementsActions($actions) {
 		//it's the same across all our user backends obviously
@@ -258,6 +258,17 @@ class Group_Proxy extends Proxy implements \OCP\GroupInterface, IGroupLDAP {
 	 * @return Access instance of Access for LDAP interaction
 	 */
 	public function getLDAPAccess($gid) {
-		return $this->handleRequest($gid, 'getLDAPAccess', []);
+		return $this->handleRequest($gid, 'getLDAPAccess', [$gid]);
 	}
+
+	/**
+	 * Return a new LDAP connection for the specified group.
+	 * The connection needs to be closed manually.
+	 * @param string $gid
+	 * @return resource of the LDAP connection
+	 */
+	public function getNewLDAPConnection($gid) {
+		return $this->handleRequest($gid, 'getNewLDAPConnection', array($gid));
+	}
+
 }

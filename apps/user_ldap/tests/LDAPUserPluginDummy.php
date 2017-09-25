@@ -40,10 +40,6 @@ class LDAPUserPluginDummy implements ILDAPUserPlugin {
 		return null;
 	}
 
-	public function checkPassword($uid, $password) {
-		return null;
-	}
-
 	public function getHome($uid) {
 		return null;
 	}
