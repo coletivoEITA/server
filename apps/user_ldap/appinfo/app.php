@@ -29,6 +29,13 @@
  *
  */
 
+\OC::$server->registerService('LDAPUserPluginManager', function() {
+	return new OCA\User_LDAP\UserPluginManager();
+});
+\OC::$server->registerService('LDAPGroupPluginManager', function() {
+	return new OCA\User_LDAP\GroupPluginManager();
+});
+
 $helper = new \OCA\User_LDAP\Helper(\OC::$server->getConfig());
 $configPrefixes = $helper->getServerConfigurationPrefixes(true);
 if(count($configPrefixes) > 0) {
@@ -47,12 +54,6 @@ if(count($configPrefixes) > 0) {
 		];
 	});
 
-	\OC::$server->registerService('LDAPUserPluginManager', function() {
-		return new OCA\User_LDAP\UserPluginManager();
-	});
-	\OC::$server->registerService('LDAPGroupPluginManager', function() {
-		return new OCA\User_LDAP\GroupPluginManager();
-	});
 	$userPluginManager = \OC::$server->query('LDAPUserPluginManager');
 	$groupPluginManager = \OC::$server->query('LDAPGroupPluginManager');
 
