@@ -51,6 +51,7 @@ namespace OCP\Mail;
  * @since 12.0.0
  */
 interface IEMailTemplate {
+
 	/**
 	 * Adds a header to the email
 	 *

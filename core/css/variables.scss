@@ -5,6 +5,7 @@ $color-primary-text: #ffffff;
 $color-error: #e9322d;
 $color-warning: #ffcc44;
 $color-success: #46ba61;
+$color-primary-element: $color-primary;
 
 @function nc-darken($color, $value) {
   @return darken($color, $value);
@@ -20,3 +21,5 @@ $image-login-background: '../img/background.jpg?v=1';
 $color-loading: #969696;
 $color-loading-dark: #bbbbbb;
 $color-box-shadow: rgba(nc-lighten($color-main-text, 20%), 0.75);
+$color-border: nc-darken($color-main-background, 8%);
+

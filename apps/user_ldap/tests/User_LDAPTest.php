@@ -37,6 +37,7 @@ use OCA\User_LDAP\FilesystemHelper;
 use OCA\User_LDAP\Helper;
 use OCA\User_LDAP\ILDAPWrapper;
 use OCA\User_LDAP\LogWrapper;
+use OCA\User_LDAP\Mapping\UserMapping;
 use OCA\User_LDAP\User\Manager;
 use OCA\User_LDAP\User\OfflineUser;
 use OC\HintException;
@@ -61,7 +62,10 @@ use OCP\Notification\IManager as INotificationManager;
 class User_LDAPTest extends TestCase {
 	protected $backend;
 	protected $access;
+	/** @var  IConfig|\PHPUnit_Framework_MockObject_MockObject */
 	protected $configMock;
+	/** @var  OfflineUser|\PHPUnit_Framework_MockObject_MockObject */
+	protected $offlineUser;
 
 	protected function setUp() {
 		parent::setUp();
@@ -82,10 +86,9 @@ class User_LDAPTest extends TestCase {
 
 		$this->configMock = $this->createMock(IConfig::class);
 
-		$offlineUser = $this->getMockBuilder('\OCA\User_LDAP\User\OfflineUser')
-			->disableOriginalConstructor()
-			->getMock();
+		$this->offlineUser = $this->createMock(OfflineUser::class);
 
+		/** @var Manager|\PHPUnit_Framework_MockObject_MockObject $um */
 		$um = $this->getMockBuilder(Manager::class)
 			->setMethods(['getDeletedUser'])
 			->setConstructorArgs([
@@ -102,7 +105,7 @@ class User_LDAPTest extends TestCase {
 
 		$um->expects($this->any())
 			->method('getDeletedUser')
-			->will($this->returnValue($offlineUser));
+			->will($this->returnValue($this->offlineUser));
 
 		$helper = new Helper(\OC::$server->getConfig());
 
@@ -287,10 +290,11 @@ class User_LDAPTest extends TestCase {
 	}
 
 	public function testDeleteUserSuccess() {
+		$uid = 'jeremy';
+		$home = '/var/vhome/jdings/';
+
 		$access = $this->getAccessMock();
-		$mapping = $this->getMockBuilder('\OCA\User_LDAP\Mapping\UserMapping')
-			->disableOriginalConstructor()
-			->getMock();
+		$mapping = $this->createMock(UserMapping::class);
 		$mapping->expects($this->once())
 			->method('unmap')
 			->will($this->returnValue(true));
@@ -298,18 +302,20 @@ class User_LDAPTest extends TestCase {
 			->method('getUserMapper')
 			->will($this->returnValue($mapping));
 
-		$config = $this->createMock(IConfig::class);
-		$config->expects($this->exactly(2))
+		$this->configMock->expects($this->any())
 			->method('getUserValue')
-			->will($this->onConsecutiveCalls('1', '/var/vhome/jdings/'));
+			->with($uid, 'user_ldap', 'isDeleted')
+			->willReturn('1');
 
-		$backend = new UserLDAP($access, $config, $this->createMock(INotificationManager::class), $this->getDefaultPluginManagerMock());
+		$this->offlineUser->expects($this->once())
+			->method('getHomePath')
+			->willReturn($home);
 
-		$result = $backend->deleteUser('jeremy');
+		$backend = new UserLDAP($access, $this->configMock, $this->createMock(INotificationManager::class), $this->getDefaultPluginManagerMock());
+
+		$result = $backend->deleteUser($uid);
 		$this->assertTrue($result);
-
-		$home = $backend->getHome('jeremy');
-		$this->assertSame($home, '/var/vhome/jdings/');
+		$this->assertSame($backend->getHome($uid), $home);
 	}
 
 	public function testDeleteUserWithPlugin() {
@@ -605,11 +611,11 @@ class User_LDAPTest extends TestCase {
 		$this->assertFalse($result);
 	}
 
-	public function testDeleteUser() {
+	public function testDeleteUserExisting() {
 		$access = $this->getAccessMock();
 		$backend = new UserLDAP($access, $this->createMock(IConfig::class), $this->createMock(INotificationManager::class), $this->getDefaultPluginManagerMock());
 
-		//we do not support deleting users at all
+		//we do not support deleting existing users at all
 		$result = $backend->deleteUser('gunslinger');
 		$this->assertFalse($result);
 	}
@@ -727,8 +733,10 @@ class User_LDAPTest extends TestCase {
 	 * @expectedException \OC\User\NoUserException
 	 */
 	public function testGetHomeDeletedUser() {
+		$uid = 'newyorker';
+
 		$access = $this->getAccessMock();
-		$backend = new UserLDAP($access, $this->createMock(IConfig::class), $this->createMock(INotificationManager::class), $this->getDefaultPluginManagerMock());
+		$backend = new UserLDAP($access, $this->configMock, $this->createMock(INotificationManager::class), $this->getDefaultPluginManagerMock());
 		$this->prepareMockForUserExists($access);
 
 		$access->connection->expects($this->any())
@@ -744,9 +752,7 @@ class User_LDAPTest extends TestCase {
 				->method('readAttribute')
 				->will($this->returnValue([]));
 
-		$userMapper = $this->getMockBuilder('\OCA\User_LDAP\Mapping\UserMapping')
-				->disableOriginalConstructor()
-				->getMock();
+		$userMapper = $this->createMock(UserMapping::class);
 
 		$access->expects($this->any())
 				->method('getUserMapper')
@@ -756,9 +762,13 @@ class User_LDAPTest extends TestCase {
 			->method('getUserValue')
 			->will($this->returnValue(true));
 
-		//no path at all – triggers OC default behaviour
-		$result = $backend->getHome('newyorker');
-		$this->assertFalse($result);
+		$this->offlineUser->expects($this->never())
+			->method('getHomePath');
+		$this->offlineUser->expects($this->once())
+			->method('getUID')
+			->willReturn($uid);
+
+		$backend->getHome($uid);
 	}
 
 	public function testGetHomeWithPlugin() {
@@ -973,7 +983,7 @@ class User_LDAPTest extends TestCase {
 		);
 
 		$this->assertEquals($ldap->countUsers(),42);
-	}	
+	}
 
 	public function testLoginName2UserNameSuccess() {
 		$loginName = 'Alice';
@@ -1085,7 +1095,7 @@ class User_LDAPTest extends TestCase {
 		// and once again to verify that caching works
 		$backend->loginName2UserName($loginName);
 	}
-	
+
 	/**
 	 * Prepares the Access mock for setPassword tests
 	 * @param \OCA\User_LDAP\Access|\PHPUnit_Framework_MockObject_MockObject $access mock
@@ -1103,7 +1113,7 @@ class User_LDAPTest extends TestCase {
 					}
 					return null;
 			   }));
-			   
+
 		$access->connection->expects($this->any())
 			   ->method('getFromCache')
 			   ->will($this->returnCallback(function($uid) {
@@ -1140,7 +1150,7 @@ class User_LDAPTest extends TestCase {
 			   ->method('stringResemblesDN')
 			   ->with($this->equalTo('dnOfRoland,dc=test'))
 			   ->will($this->returnValue(true));
-			   
+
 		$access->expects($this->any())
 			   ->method('setPassword')
 			   ->will($this->returnCallback(function($uid, $password) {
@@ -1164,7 +1174,7 @@ class User_LDAPTest extends TestCase {
 
 		$this->assertTrue(\OC_User::setPassword('roland', 'dt'));
 	}
-	
+
 	public function testSetPasswordValid() {
 		$access = $this->getAccessMock();
 
@@ -1259,7 +1269,7 @@ class User_LDAPTest extends TestCase {
 		);
 
 		$this->assertEquals($ldap->setPassword('uid', 'password'),'result');
-	}	
+	}
 
 	public function testCanChangeAvatarWithPlugin() {
 		$pluginManager = $this->getMockBuilder('\OCA\User_LDAP\UserPluginManager')

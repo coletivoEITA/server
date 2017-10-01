@@ -45,6 +45,10 @@ class EMailTemplate implements IEMailTemplate {
 	protected $urlGenerator;
 	/** @var IL10N */
 	protected $l10n;
+	/** @var string */
+	protected $emailId;
+	/** @var array */
+	protected $data;
 
 	/** @var string */
 	protected $htmlBody = '';
@@ -338,14 +342,20 @@ EOF;
 	 * @param Defaults $themingDefaults
 	 * @param IURLGenerator $urlGenerator
 	 * @param IL10N $l10n
+	 * @param string $emailId
+	 * @param array $data
 	 */
 	public function __construct(Defaults $themingDefaults,
 								IURLGenerator $urlGenerator,
-								IL10N $l10n) {
+								IL10N $l10n,
+								$emailId,
+								array $data) {
 		$this->themingDefaults = $themingDefaults;
 		$this->urlGenerator = $urlGenerator;
 		$this->l10n = $l10n;
 		$this->htmlBody .= $this->head;
+		$this->emailId = $emailId;
+		$this->data = $data;
 	}
 
 	/**

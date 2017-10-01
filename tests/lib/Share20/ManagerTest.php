@@ -23,6 +23,7 @@ namespace Test\Share20;
 use OC\Files\Mount\MoveableMount;
 use OC\HintException;
 use OC\Share20\DefaultShareProvider;
+use OCP\Defaults;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
@@ -31,8 +32,11 @@ use OCP\Files\Node;
 use OCP\Files\Storage;
 use OCP\IGroup;
 use OCP\IServerContainer;
+use OCP\IURLGenerator;
 use OCP\IUser;
 use OCP\IUserManager;
+use OCP\L10N\IFactory;
+use OCP\Mail\IMailer;
 use OCP\Share\Exceptions\ShareNotFound;
 use OCP\Share\IProviderFactory;
 use OCP\Share\IShare;
@@ -77,6 +81,8 @@ class ManagerTest extends \Test\TestCase {
 	protected $groupManager;
 	/** @var IL10N|\PHPUnit_Framework_MockObject_MockObject */
 	protected $l;
+	/** @var IFactory|\PHPUnit_Framework_MockObject_MockObject */
+	protected $l10nFactory;
 	/** @var DummyFactory */
 	protected $factory;
 	/** @var IUserManager|\PHPUnit_Framework_MockObject_MockObject */
@@ -85,6 +91,12 @@ class ManagerTest extends \Test\TestCase {
 	protected $rootFolder;
 	/** @var  EventDispatcher | \PHPUnit_Framework_MockObject_MockObject */
 	protected $eventDispatcher;
+	/** @var  IMailer|\PHPUnit_Framework_MockObject_MockObject */
+	protected $mailer;
+	/** @var  IURLGenerator|\PHPUnit_Framework_MockObject_MockObject */
+	protected $urlGenerator;
+	/** @var  \OC_Defaults|\PHPUnit_Framework_MockObject_MockObject */
+	protected $defaults;
 
 	public function setUp() {
 
@@ -97,7 +109,11 @@ class ManagerTest extends \Test\TestCase {
 		$this->userManager = $this->createMock(IUserManager::class);
 		$this->rootFolder = $this->createMock(IRootFolder::class);
 		$this->eventDispatcher = $this->createMock(EventDispatcher::class);
+		$this->mailer = $this->createMock(IMailer::class);
+		$this->urlGenerator = $this->createMock(IURLGenerator::class);
+		$this->defaults = $this->createMock(\OC_Defaults::class);
 
+		$this->l10nFactory = $this->createMock(IFactory::class);
 		$this->l = $this->createMock(IL10N::class);
 		$this->l->method('t')
 			->will($this->returnCallback(function($text, $parameters = []) {
@@ -114,10 +130,14 @@ class ManagerTest extends \Test\TestCase {
 			$this->mountManager,
 			$this->groupManager,
 			$this->l,
+			$this->l10nFactory,
 			$this->factory,
 			$this->userManager,
 			$this->rootFolder,
-			$this->eventDispatcher
+			$this->eventDispatcher,
+			$this->mailer,
+			$this->urlGenerator,
+			$this->defaults
 		);
 
 		$this->defaultProvider = $this->createMock(DefaultShareProvider::class);
@@ -138,10 +158,14 @@ class ManagerTest extends \Test\TestCase {
 				$this->mountManager,
 				$this->groupManager,
 				$this->l,
+				$this->l10nFactory,
 				$this->factory,
 				$this->userManager,
 				$this->rootFolder,
-				$this->eventDispatcher
+				$this->eventDispatcher,
+				$this->mailer,
+				$this->urlGenerator,
+				$this->defaults
 			]);
 	}
 
@@ -2071,10 +2095,14 @@ class ManagerTest extends \Test\TestCase {
 			$this->mountManager,
 			$this->groupManager,
 			$this->l,
+			$this->l10nFactory,
 			$factory,
 			$this->userManager,
 			$this->rootFolder,
-			$this->eventDispatcher
+			$this->eventDispatcher,
+			$this->mailer,
+			$this->urlGenerator,
+			$this->defaults
 		);
 
 		$share = $this->createMock(IShare::class);
@@ -2110,10 +2138,14 @@ class ManagerTest extends \Test\TestCase {
 			$this->mountManager,
 			$this->groupManager,
 			$this->l,
+			$this->l10nFactory,
 			$factory,
 			$this->userManager,
 			$this->rootFolder,
-			$this->eventDispatcher
+			$this->eventDispatcher,
+			$this->mailer,
+			$this->urlGenerator,
+			$this->defaults
 		);
 
 		$share = $this->createMock(IShare::class);
@@ -2758,10 +2790,14 @@ class ManagerTest extends \Test\TestCase {
 			$this->mountManager,
 			$this->groupManager,
 			$this->l,
+			$this->l10nFactory,
 			$factory,
 			$this->userManager,
 			$this->rootFolder,
-			$this->eventDispatcher
+			$this->eventDispatcher,
+			$this->mailer,
+			$this->urlGenerator,
+			$this->defaults
 		);
 		$this->assertSame($expected,
 			$manager->shareProviderExists($shareType)
@@ -2786,10 +2822,14 @@ class ManagerTest extends \Test\TestCase {
 			$this->mountManager,
 			$this->groupManager,
 			$this->l,
+			$this->l10nFactory,
 			$factory,
 			$this->userManager,
 			$this->rootFolder,
-			$this->eventDispatcher
+			$this->eventDispatcher,
+			$this->mailer,
+			$this->urlGenerator,
+			$this->defaults
 		);
 
 		$factory->setProvider($this->defaultProvider);
@@ -2845,10 +2885,14 @@ class ManagerTest extends \Test\TestCase {
 			$this->mountManager,
 			$this->groupManager,
 			$this->l,
+			$this->l10nFactory,
 			$factory,
 			$this->userManager,
 			$this->rootFolder,
-			$this->eventDispatcher
+			$this->eventDispatcher,
+			$this->mailer,
+			$this->urlGenerator,
+			$this->defaults
 		);
 
 		$factory->setProvider($this->defaultProvider);

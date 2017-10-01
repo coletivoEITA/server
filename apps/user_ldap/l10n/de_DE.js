@@ -31,7 +31,7 @@ OC.L10N.register(
     "Base DN could not be auto-detected, please revise credentials, host and port." : "Die Base DN konnte nicht automatisch erkannt werden, bitte überprüfen Sie Anmeldeinformationen, Host und Port.",
     "Could not detect Base DN, please enter it manually." : "Die Base DN konnte nicht erkannt werden, bitte geben Sie sie manuell ein.",
     "{nthServer}. Server" : "{nthServer}. - Server",
-    "No object found in the given Base DN. Please revise." : "Keine Objekte in der angegebenen Base DN gefunden, bitte überprüfen.",
+    "No object found in the given Base DN. Please revise." : "Keine Objekte in der angegebenen Base-DN gefunden, bitte überprüfen.",
     "More than 1,000 directory entries available." : "Es sind mehr als 1.000 Verzeichniseinträge verfügbar.",
     " entries available within the provided Base DN" : "Einträge in der angegebenen Base DN verfügbar",
     "An error occurred. Please check the Base DN, as well as connection settings and credentials." : "Es ist ein Fehler aufgetreten. Bitte überprüfen Sie die Base DN wie auch die Verbindungseinstellungen und Anmeldeinformationen.",
@@ -189,13 +189,9 @@ OC.L10N.register(
     "Clear Groupname-LDAP Group Mapping" : "Lösche LDAP-Gruppennamenzuordnung",
     "The %uid placeholder is missing. It will be replaced with the login name when querying LDAP / AD." : "Der %uid - Platzhalter fehlt. Dieser wird mit dem Anmeldenamen beim Abfragen von LDAP / AD ersetzt.",
     "Verify settings and count groups" : "Einstellungen überprüfen und Gruppen zählen",
-    "Allows login against the LDAP / AD username, which is either uid or samaccountname and will be detected." : "Erlaubt das Anmelden gegen den LDAP / AD Nutzernamen, welcher entweder eine UID oder samaccountname ist und automatisch erkannt wird.",
-    "Allows login against an email attribute. Mail and mailPrimaryAddress will be allowed." : "Erlaubt das Anmelden gegen ein E-Mail Attribut. Mail und mailPrimaryAddress sind erlaubt.",
-    "Defines the filter to apply, when login is attempted. %%uid replaces the username in the login action. Example: \"uid=%%uid\"" : "Bestimmt den Filter, welcher bei einer Anmeldung angewandt wird. %%uid ersetzt den Benutzernamen bei der Anmeldung. Beispiel: \"uid=%%uid\"",
     "Add a new and blank configuration" : "Eine neue und leere Konfiguration hinzufügen",
     "You can omit the protocol, except you require SSL. Then start with ldaps://" : "Sie können das Protokoll auslassen, außer wenn Sie SSL benötigen. Beginnen Sie dann mit ldaps://",
     "<b>Warning:</b> Apps user_ldap and user_webdavauth are incompatible. You may experience unexpected behavior. Please ask your system administrator to disable one of them." : "<b>Warnung:</b> Die Anwendungen user_ldap und user_webdavauth sind inkompatibel. Es kann deshalb zu unerwartetem Systemverhalten kommen. Bitte kontaktieren Sie Ihren Systemadministator und bitten Sie um die Deaktivierung einer der beiden Anwendungen.",
-    "in bytes" : "in Bytes",
-    "Allows login against the LDAP / AD username, which is either uid or sAMAccountName and will be detected." : "Erlaubt die Anmeldung gegen den LDAP / AD Benutzernamen, der entweder uid oder sAAMAccountName ist, und wird erkannt."
+    "in bytes" : "in Bytes"
 },
 "nplurals=2; plural=(n != 1);");

@@ -40,7 +40,11 @@ use OCP\IConfig;
 use OCP\IGroupManager;
 use OCP\IL10N;
 use OCP\ILogger;
+use OCP\IURLGenerator;
+use OCP\IUser;
 use OCP\IUserManager;
+use OCP\L10N\IFactory;
+use OCP\Mail\IMailer;
 use OCP\Security\IHasher;
 use OCP\Security\ISecureRandom;
 use OCP\Share\Exceptions\GenericShareException;
@@ -72,6 +76,8 @@ class Manager implements IManager {
 	private $groupManager;
 	/** @var IL10N */
 	private $l;
+	/** @var IFactory */
+	private $l10nFactory;
 	/** @var IUserManager */
 	private $userManager;
 	/** @var IRootFolder */
@@ -82,6 +88,12 @@ class Manager implements IManager {
 	private $eventDispatcher;
 	/** @var LegacyHooks */
 	private $legacyHooks;
+	/** @var IMailer */
+	private $mailer;
+	/** @var IURLGenerator */
+	private $urlGenerator;
+	/** @var \OC_Defaults */
+	private $defaults;
 
 
 	/**
@@ -94,10 +106,14 @@ class Manager implements IManager {
 	 * @param IMountManager $mountManager
 	 * @param IGroupManager $groupManager
 	 * @param IL10N $l
+	 * @param IFactory $l10nFactory
 	 * @param IProviderFactory $factory
 	 * @param IUserManager $userManager
 	 * @param IRootFolder $rootFolder
 	 * @param EventDispatcher $eventDispatcher
+	 * @param IMailer $mailer
+	 * @param IURLGenerator $urlGenerator
+	 * @param \OC_Defaults $defaults
 	 */
 	public function __construct(
 			ILogger $logger,
@@ -107,10 +123,14 @@ class Manager implements IManager {
 			IMountManager $mountManager,
 			IGroupManager $groupManager,
 			IL10N $l,
+			IFactory $l10nFactory,
 			IProviderFactory $factory,
 			IUserManager $userManager,
 			IRootFolder $rootFolder,
-			EventDispatcher $eventDispatcher
+			EventDispatcher $eventDispatcher,
+			IMailer $mailer,
+			IURLGenerator $urlGenerator,
+			\OC_Defaults $defaults
 	) {
 		$this->logger = $logger;
 		$this->config = $config;
@@ -119,12 +139,16 @@ class Manager implements IManager {
 		$this->mountManager = $mountManager;
 		$this->groupManager = $groupManager;
 		$this->l = $l;
+		$this->l10nFactory = $l10nFactory;
 		$this->factory = $factory;
 		$this->userManager = $userManager;
 		$this->rootFolder = $rootFolder;
 		$this->eventDispatcher = $eventDispatcher;
 		$this->sharingDisabledForUsersCache = new CappedMemoryCache();
 		$this->legacyHooks = new LegacyHooks($this->eventDispatcher);
+		$this->mailer = $mailer;
+		$this->urlGenerator = $urlGenerator;
+		$this->defaults = $defaults;
 	}
 
 	/**
@@ -666,7 +690,102 @@ class Manager implements IManager {
 
 		\OC_Hook::emit('OCP\Share', 'post_shared', $postHookData);
 
+		if ($share->getShareType() === \OCP\Share::SHARE_TYPE_USER) {
+			$user = $this->userManager->get($share->getSharedWith());
+			if ($user !== null) {
+				$emailAddress = $user->getEMailAddress();
+				if ($emailAddress !== null && $emailAddress !== '') {
+					$userLang = $this->config->getUserValue($share->getSharedWith(), 'core', 'lang', null);
+					$l = $this->l10nFactory->get('lib', $userLang);
+					$this->sendMailNotification(
+						$l,
+						$share->getNode()->getName(),
+						$this->urlGenerator->linkToRouteAbsolute('files.viewcontroller.showFile', [ 'fileid' => $share->getNode()->getId() ]),
+						$share->getSharedBy(),
+						$emailAddress,
+						$share->getExpirationDate()
+					);
+					$this->logger->debug('Send share notification to ' . $emailAddress . ' for share with ID ' . $share->getId(), ['app' => 'share']);
+				} else {
+					$this->logger->debug('Share notification not send to ' . $share->getSharedWith() . ' because email address is not set.', ['app' => 'share']);
+				}
+			} else {
+				$this->logger->debug('Share notification not send to ' . $share->getSharedWith() . ' because user could not be found.', ['app' => 'share']);
+			}
+		}
+
 		return $share;
+	}
+
+	/**
+	 * @param IL10N $l Language of the recipient
+	 * @param string $filename file/folder name
+	 * @param string $link link to the file/folder
+	 * @param string $initiator user ID of share sender
+	 * @param string $shareWith email address of share receiver
+	 * @param \DateTime|null $expiration
+	 * @throws \Exception If mail couldn't be sent
+	 */
+	protected function sendMailNotification(IL10N $l,
+											$filename,
+											$link,
+											$initiator,
+											$shareWith,
+											\DateTime $expiration = null) {
+		$initiatorUser = $this->userManager->get($initiator);
+		$initiatorDisplayName = ($initiatorUser instanceof IUser) ? $initiatorUser->getDisplayName() : $initiator;
+		$subject = $l->t('%s shared »%s« with you', array($initiatorDisplayName, $filename));
+
+		$message = $this->mailer->createMessage();
+
+		$emailTemplate = $this->mailer->createEMailTemplate('files_sharing.RecipientNotification', [
+			'filename' => $filename,
+			'link' => $link,
+			'initiator' => $initiatorDisplayName,
+			'expiration' => $expiration,
+			'shareWith' => $shareWith,
+		]);
+
+		$emailTemplate->addHeader();
+		$emailTemplate->addHeading($l->t('%s shared »%s« with you', [$initiatorDisplayName, $filename]), false);
+		$text = $l->t('%s shared »%s« with you.', [$initiatorDisplayName, $filename]);
+
+		$emailTemplate->addBodyText(
+			$text . ' ' . $l->t('Click the button below to open it.'),
+			$text
+		);
+		$emailTemplate->addBodyButton(
+			$l->t('Open »%s«', [$filename]),
+			$link
+		);
+
+		$message->setTo([$shareWith]);
+
+		// The "From" contains the sharers name
+		$instanceName = $this->defaults->getName();
+		$senderName = $l->t(
+			'%s via %s',
+			[
+				$initiatorDisplayName,
+				$instanceName
+			]
+		);
+		$message->setFrom([\OCP\Util::getDefaultEmailAddress($instanceName) => $senderName]);
+
+		// The "Reply-To" is set to the sharer if an mail address is configured
+		// also the default footer contains a "Do not reply" which needs to be adjusted.
+		$initiatorEmail = $initiatorUser->getEMailAddress();
+		if($initiatorEmail !== null) {
+			$message->setReplyTo([$initiatorEmail => $initiatorDisplayName]);
+			$emailTemplate->addFooter($instanceName . ' - ' . $this->defaults->getSlogan());
+		} else {
+			$emailTemplate->addFooter();
+		}
+
+		$message->setSubject($subject);
+		$message->setPlainBody($emailTemplate->renderText());
+		$message->setHtmlBody($emailTemplate->renderHtml());
+		$this->mailer->send($message);
 	}
 
 	/**
@@ -1083,6 +1202,15 @@ class Manager implements IManager {
 		if ($share === null && $this->shareProviderExists(\OCP\Share::SHARE_TYPE_EMAIL)) {
 			try {
 				$provider = $this->factory->getProviderForType(\OCP\Share::SHARE_TYPE_EMAIL);
+				$share = $provider->getShareByToken($token);
+			} catch (ProviderException $e) {
+			} catch (ShareNotFound $e) {
+			}
+		}
+
+		if ($share === null && $this->shareProviderExists(\OCP\Share::SHARE_TYPE_CIRCLE)) {
+			try {
+				$provider = $this->factory->getProviderForType(\OCP\Share::SHARE_TYPE_CIRCLE);
 				$share = $provider->getShareByToken($token);
 			} catch (ProviderException $e) {
 			} catch (ShareNotFound $e) {

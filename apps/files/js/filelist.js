@@ -564,6 +564,7 @@
 		 */
 		_onShow: function(e) {
 			if (this.shown) {
+				this._setCurrentDir('/', false);
 				this.reload();
 			}
 			this.shown = true;
@@ -2715,7 +2716,7 @@
 		 * Shows a "permission denied" notification
 		 */
 		_showPermissionDeniedNotification: function() {
-			var message = t('core', 'You don’t have permission to upload or create files here');
+			var message = t('files', 'You don’t have permission to upload or create files here');
 			OC.Notification.show(message, {type: 'error'});
 		},
 
@@ -2790,6 +2791,7 @@
 					var isCreatable = (self.getDirectoryPermissions() & OC.PERMISSION_CREATE) !== 0;
 					if (!isCreatable) {
 						self._showPermissionDeniedNotification();
+						e.stopPropagation();
 						return false;
 					}
 
