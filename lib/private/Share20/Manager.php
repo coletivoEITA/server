@@ -1140,7 +1140,13 @@ class Manager implements IManager {
 	 * @return Share[]
 	 */
 	public function getSharesByPath(\OCP\Files\Node $path, $page=0, $perPage=50) {
-		return [];
+		$providers = $this->factory->getAllProviders();
+
+		$existingShares = [];
+		foreach ($providers as $provider) {
+			$existingShares = array_merge($existingShares, $provider->getSharesByPath($path));
+		}
+		return $existingShares;
 	}
 
 	/**
@@ -1544,5 +1550,7 @@ class Manager implements IManager {
 
 		return true;
 	}
+
+
 
 }
