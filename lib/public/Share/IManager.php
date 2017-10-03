@@ -341,4 +341,13 @@ interface IManager {
 	 */
 	public function shareProviderExists($shareType);
 
+	/**
+	 * Get shares for a given path
+	 *
+	 * @param \OCP\Files\Node $path
+	 * @return \OCP\Share\IShare[]
+	 * @since 13.0.0
+	 */
+	public function getSharesByPath(\OCP\Files\Node $path, $page=0, $perPage=50);
+
 }

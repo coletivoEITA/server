@@ -193,9 +193,68 @@ class SharedMount extends MountPoint implements MoveableMount {
 		$result = true;
 
 		try {
-			$this->updateFileTarget($relTargetPath, $share);
-			$this->setMountPoint($target);
-			$this->storage->setMountPoint($relTargetPath);
+			// Gets mount for destination target. If it is another share, will delete this share and move the file
+			$targetMount = Filesystem::getMountManager()->find($target);
+			if (is_a($targetMount, 'OCA\Files_Sharing\SharedMount')) {
+				$thisNode = \OC::$server->getRootFolder()->getById($this->getStorageRootId());
+				$thisShares = \OC::$server->getShareManager()->getSharesByPath($thisNode[0]);
+
+				$targetNode = \OC::$server->getRootFolder()->getById($targetMount->getStorageRootId());
+				$targetShares = \OC::$server->getShareManager()->getSharesByPath($targetNode[0]);
+
+				//Must have exactly the same shares
+				if (count($thisShares) == count($targetShares)) {
+					//checks for each share if there is correspondence
+					$sameShares = true;
+					foreach ($thisShares as $thisShare) {
+						foreach ($targetShares as $targetShare) {
+							if ($targetShare->getSharedWith() == $thisShare->getSharedWith() and
+								$targetShare->getShareType() == $thisShare->getShareType() and
+								($thisShare->getNodeType() === 'file' or
+									$targetShare->getPermissions() == $thisShare->getPermissions())) {
+								continue 2;
+							}
+						}
+						$sameShares = false;
+					}
+					if ($sameShares) {
+						//Deletes share
+						foreach ($thisShares as $thisShare) {
+							\OC::$server->getShareManager()->deleteShare($thisShare);
+						}
+
+						//Gets the mount for the original file
+						$srcPath = $thisNode[0]->getPath();
+						$destPath = $targetNode[0]->getPath(). '/' . basename($internalPath1);
+						$srcMount = Filesystem::getMountManager()->find($srcPath);
+						$destMount = Filesystem::getMountManager()->find($destPath);
+						$storage1 = $srcMount->getStorage();
+						$storage2 = $destMount->getStorage();
+						$internalPath1 = $srcMount->getInternalPath($srcPath);
+						$internalPath2 = $srcMount->getInternalPath($destPath). '/' . basename($internalPath1);
+
+						//Moves file into target
+						if ($storage1 === $storage2) {
+							if ($storage1) {
+								$result = $storage1->rename($internalPath1, $internalPath2);
+							} else {
+								$result = false;
+							}
+							// moving a file/folder between storages (from $storage1 to $storage2)
+						} else {
+							$result = $storage2->moveFromStorage($storage1, $internalPath1, $internalPath2);
+						}
+					}
+
+				} else {
+					$result = false;
+				}
+				
+			} else {
+				$this->updateFileTarget($relTargetPath, $share);
+				$this->setMountPoint($target);
+				$this->storage->setMountPoint($relTargetPath);
+			}
 		} catch (\Exception $e) {
 			\OCP\Util::writeLog('file sharing',
 				'Could not rename mount point for shared folder "' . $this->getMountPoint() . '" to "' . $target . '"',
