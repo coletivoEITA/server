@@ -743,6 +743,12 @@ class View {
 				return false;
 			}
 
+			if ($this->isMovingMountIntoMount($path1, $path2)) {
+				if ($res = $this->moveMountIntoMount($path1, $path2)) {
+					return $res;
+				}
+			}
+
 			$this->lockFile($path1, ILockingProvider::LOCK_SHARED, true);
 			try {
 				$this->lockFile($path2, ILockingProvider::LOCK_SHARED, true);
@@ -2145,5 +2151,80 @@ class View {
 		}
 
 		return true;
+	}
+
+	private function isMovingMountIntoMount($path1, $path2) {
+		$mount1 = $this->getMount($path1);
+		$absolutePath1 = Filesystem::normalizePath($this->getAbsolutePath($path1));
+		$internalPath1 = $mount1->getInternalPath($absolutePath1);
+
+		if ($internalPath1 === '') {
+			if ($mount1 instanceof MoveableMount) {
+				if (is_a($mount1, 'OCA\Files_Sharing\SharedMount')) {
+					$mount2 = $this->getMount($path2);
+
+					if (is_a($mount2, 'OCA\Files_Sharing\SharedMount')) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * @param $path1
+	 * @param $path2
+	 * @return bool
+	 */
+	private function moveMountIntoMount($path1, $path2) {
+		$mount1 = $this->getMount($path1);
+		$mount2 = $this->getMount($path2);
+
+		$srcFileId = $mount1->getStorageRootId();
+		$srcNodes = \OC::$server->getRootFolder()->getById($srcFileId);
+		$srcShares = \OC::$server->getShareManager()->getSharesByPath($srcNodes[0]);
+
+		$targetFileId = $mount2->getStorageRootId();
+		$targetNodes = \OC::$server->getRootFolder()->getById($targetFileId);
+		$targetShares = \OC::$server->getShareManager()->getSharesByPath($targetNodes[0]);
+
+		$result = false;
+
+		//Must have exactly the same shares
+		if (count($srcShares) == count($targetShares)) {
+			//checks for each share if there is correspondence
+			$sameShares = true;
+			foreach ($srcShares as $thisShare) {
+				foreach ($targetShares as $targetShare) {
+					if ($targetShare->getSharedWith() == $thisShare->getSharedWith() and
+						$targetShare->getShareType() == $thisShare->getShareType() and
+						($thisShare->getNodeType() === 'file' or
+							$targetShare->getPermissions() == $thisShare->getPermissions())) {
+						continue 2;
+					}
+				}
+				$sameShares = false;
+			}
+			if ($sameShares) {
+
+				//Deletes share
+				foreach ($srcShares as $thisShare) {
+					\OC::$server->getShareManager()->deleteShare($thisShare);
+				}
+
+				//Gets this file's owner's name
+				$owner = $mount1->getShare()->getShareOwner();
+
+				$view = new \OC\Files\View('/' . $owner . '/files');
+
+				$srcPath = $view->getPath($srcFileId);
+				$destPath = $view->getPath($targetFileId) . '/' . basename($srcPath);
+
+				$result = $view->rename($srcPath,$destPath);
+			}
+		}
+
+		return $result;
 	}
 }
