@@ -115,6 +115,7 @@ class AvatarController extends Controller {
 	/**
 	 * @NoAdminRequired
 	 * @NoCSRFRequired
+	 * @NoSameSiteCookieRequired
 	 * @PublicPage
 	 *
 	 * @param string $userId
@@ -143,7 +144,7 @@ class AvatarController extends Controller {
 		} catch (\Exception $e) {
 			$resp = new JSONResponse([
 				'data' => [
-					'displayname' => '',
+					'displayname' => $userId,
 				],
 			]);
 		}

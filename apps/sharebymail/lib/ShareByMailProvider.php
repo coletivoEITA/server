@@ -347,7 +347,8 @@ class ShareByMailProvider implements IShareProvider {
 				$share->getNode()->getName(),
 				$link,
 				$share->getSharedBy(),
-				$share->getSharedWith()
+				$share->getSharedWith(),
+				$share->getExpirationDate()
 			);
 		} catch (HintException $hintException) {
 			$this->logger->error('Failed to send share by mail: ' . $hintException->getMessage());
@@ -369,20 +370,27 @@ class ShareByMailProvider implements IShareProvider {
 	 * @param string $link
 	 * @param string $initiator
 	 * @param string $shareWith
+	 * @param \DateTime|null $expiration
 	 * @throws \Exception If mail couldn't be sent
 	 */
 	protected function sendMailNotification($filename,
 											$link,
 											$initiator,
-											$shareWith) {
+											$shareWith,
+											\DateTime $expiration = null) {
 		$initiatorUser = $this->userManager->get($initiator);
 		$initiatorDisplayName = ($initiatorUser instanceof IUser) ? $initiatorUser->getDisplayName() : $initiator;
-		$subject = (string)$this->l->t('%s shared »%s« with you', array($initiatorDisplayName, $filename));
-
 		$message = $this->mailer->createMessage();
 
-		$emailTemplate = $this->mailer->createEMailTemplate();
+		$emailTemplate = $this->mailer->createEMailTemplate('sharebymail.RecipientNotification', [
+			'filename' => $filename,
+			'link' => $link,
+			'initiator' => $initiatorDisplayName,
+			'expiration' => $expiration,
+			'shareWith' => $shareWith,
+		]);
 
+		$emailTemplate->setSubject($this->l->t('%s shared »%s« with you', array($initiatorDisplayName, $filename)));
 		$emailTemplate->addHeader();
 		$emailTemplate->addHeading($this->l->t('%s shared »%s« with you', [$initiatorDisplayName, $filename]), false);
 		$text = $this->l->t('%s shared »%s« with you.', [$initiatorDisplayName, $filename]);
@@ -414,14 +422,12 @@ class ShareByMailProvider implements IShareProvider {
 		$initiatorEmail = $initiatorUser->getEMailAddress();
 		if($initiatorEmail !== null) {
 			$message->setReplyTo([$initiatorEmail => $initiatorDisplayName]);
-			$emailTemplate->addFooter($instanceName . ' - ' . $this->defaults->getSlogan());
+			$emailTemplate->addFooter($instanceName . ($this->defaults->getSlogan() !== '' ? ' - ' . $this->defaults->getSlogan() : ''));
 		} else {
 			$emailTemplate->addFooter();
 		}
 
-		$message->setSubject($subject);
-		$message->setPlainBody($emailTemplate->renderText());
-		$message->setHtmlBody($emailTemplate->renderHtml());
+		$message->useTemplate($emailTemplate);
 		$this->mailer->send($message);
 	}
 
@@ -446,13 +452,20 @@ class ShareByMailProvider implements IShareProvider {
 		$initiatorDisplayName = ($initiatorUser instanceof IUser) ? $initiatorUser->getDisplayName() : $initiator;
 		$initiatorEmailAddress = ($initiatorUser instanceof IUser) ? $initiatorUser->getEMailAddress() : null;
 
-		$subject = (string)$this->l->t('Password to access »%s« shared to you by %s', [$filename, $initiatorDisplayName]);
 		$plainBodyPart = $this->l->t("%s shared »%s« with you.\nYou should have already received a separate mail with a link to access it.\n", [$initiatorDisplayName, $filename]);
 		$htmlBodyPart = $this->l->t('%s shared »%s« with you. You should have already received a separate mail with a link to access it.', [$initiatorDisplayName, $filename]);
 
 		$message = $this->mailer->createMessage();
 
-		$emailTemplate = $this->mailer->createEMailTemplate();
+		$emailTemplate = $this->mailer->createEMailTemplate('sharebymail.RecipientPasswordNotification', [
+			'filename' => $filename,
+			'password' => $password,
+			'initiator' => $initiatorDisplayName,
+			'initiatorEmail' => $initiatorEmailAddress,
+			'shareWith' => $shareWith,
+		]);
+
+		$emailTemplate->setSubject($this->l->t('Password to access »%s« shared to you by %s', [$filename, $initiatorDisplayName]));
 		$emailTemplate->addHeader();
 		$emailTemplate->addHeading($this->l->t('Password to access »%s«', [$filename]), false);
 		$emailTemplate->addBodyText($htmlBodyPart, $plainBodyPart);
@@ -476,9 +489,7 @@ class ShareByMailProvider implements IShareProvider {
 		}
 
 		$message->setTo([$shareWith]);
-		$message->setSubject($subject);
-		$message->setBody($emailTemplate->renderText(), 'text/plain');
-		$message->setHtmlBody($emailTemplate->renderHtml());
+		$message->useTemplate($emailTemplate);
 		$this->mailer->send($message);
 
 		$this->createPasswordSendActivity($share, $shareWith, false);
@@ -509,12 +520,18 @@ class ShareByMailProvider implements IShareProvider {
 			);
 		}
 
-		$subject = (string)$this->l->t('Password to access »%s« shared with %s', [$filename, $shareWith]);
 		$bodyPart = $this->l->t("You just shared »%s« with %s. The share was already send to the recipient. Due to the security policies defined by the administrator of %s each share needs to be protected by password and it is not allowed to send the password directly to the recipient. Therefore you need to forward the password manually to the recipient.", [$filename, $shareWith, $this->defaults->getName()]);
 
 		$message = $this->mailer->createMessage();
-		$emailTemplate = $this->mailer->createEMailTemplate();
+		$emailTemplate = $this->mailer->createEMailTemplate('sharebymail.OwnerPasswordNotification', [
+			'filename' => $filename,
+			'password' => $password,
+			'initiator' => $initiatorDisplayName,
+			'initiatorEmail' => $initiatorEMailAddress,
+			'shareWith' => $shareWith,
+		]);
 
+		$emailTemplate->setSubject($this->l->t('Password to access »%s« shared with %s', [$filename, $shareWith]));
 		$emailTemplate->addHeader();
 		$emailTemplate->addHeading($this->l->t('Password to access »%s«', [$filename]), false);
 		$emailTemplate->addBodyText($bodyPart);
@@ -526,9 +543,7 @@ class ShareByMailProvider implements IShareProvider {
 			$message->setFrom([$initiatorEMailAddress => $initiatorDisplayName]);
 		}
 		$message->setTo([$initiatorEMailAddress => $initiatorDisplayName]);
-		$message->setSubject($subject);
-		$message->setBody($emailTemplate->renderText(), 'text/plain');
-		$message->setHtmlBody($emailTemplate->renderHtml());
+		$message->useTemplate($emailTemplate);
 		$this->mailer->send($message);
 
 		$this->createPasswordSendActivity($share, $shareWith, true);

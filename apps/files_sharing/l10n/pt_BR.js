@@ -77,7 +77,7 @@ OC.L10N.register(
     "Public link sharing is disabled by the administrator" : "O compartilhamento por link público foi desativado pelo administrador",
     "Public upload disabled by the administrator" : "O envio público foi desativado pelo administrador",
     "Public upload is only possible for publicly shared folders" : "O envio público só é possível para pastas compartilhadas publicamente",
-    "Invalid date, date format must be YYYY-MM-DD" : "Data inválida, o formato da data deve ser AAAA-MM-DD",
+    "Invalid date, date format must be YYYY-MM-DD" : "Data inválida, o formato da data deve ser YYYY-MM-DD",
     "Sharing %s failed because the back end does not allow shares from type %s" : "O compartilhando %s falhou porque o serviço não permite ações de tipo %s",
     "You cannot share to a Circle if the app is not enabled" : "Você não pode compartilhar para um círculo se o aplicativo não está habilitado",
     "Please specify a valid circle" : "Por favor especifique um círculo válido",
@@ -87,9 +87,7 @@ OC.L10N.register(
     "Wrong or no update parameter given" : "O parâmetro da atualização fornecido está errado ou não existe",
     "Can't change permissions for public share links" : "Não foi possível alterar as permissões para links de compartilhamento público",
     "Cannot increase permissions" : "Não foi possível aumentar as permissões",
-    "%s is publicly shared" : "%s está compartilhado publicamente",
     "Share API is disabled" : "O compartilhamento de API está desabilitado.",
-    "File sharing" : "Compartilhamento de arquivo",
     "This share is password-protected" : "Este compartilhamento é protegido por senha",
     "The password is wrong. Try again." : "Senha incorreta. Tente novamente.",
     "Password" : "Senha",
@@ -111,6 +109,7 @@ OC.L10N.register(
     "Upload files to %s" : "Enviar arquivos para %s",
     "Select or drop files" : "Selecione ou solte arquivos",
     "Uploading files…" : "Enviando arquivos...",
-    "Uploaded files:" : "Arquivos enviados:"
+    "Uploaded files:" : "Arquivos enviados:",
+    "%s is publicly shared" : "%s está compartilhado publicamente"
 },
 "nplurals=2; plural=(n > 1);");

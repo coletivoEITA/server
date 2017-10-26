@@ -49,11 +49,11 @@ class ServerTest extends TestCase {
 
 	public function setUp() {
 		parent::setUp();
-		$this->config = $this->getMockBuilder('\OCP\IConfig')->getMock();
+		$this->config = $this->getMockBuilder(IConfig::class)->getMock();
 		$this->request = $this->createMock(IRequest::class);
 		$this->dbConnection = $this->getMockBuilder('\OCP\IDBConnection')->getMock();
 		$this->lockingProvider = $this->getMockBuilder('\OCP\Lock\ILockingProvider')->getMock();
-		$this->l10n = $this->getMockBuilder('\OCP\IL10N')->getMock();
+		$this->l10n = $this->getMockBuilder(IL10N::class)->getMock();
 
 		$this->admin = new Server(
 			$this->dbConnection,
@@ -80,12 +80,12 @@ class ServerTest extends TestCase {
 			->with('core', 'backgroundjobs_mode', 'ajax')
 			->willReturn('ajax');
 		$this->config
-			->expects($this->at(4))
+			->expects($this->at(3))
 			->method('getAppValue')
 			->with('core', 'lastcron', false)
 			->willReturn(false);
 		$this->config
-			->expects($this->at(5))
+			->expects($this->at(4))
 			->method('getAppValue')
 			->with('core', 'cronErrors')
 			->willReturn('');
@@ -93,11 +93,6 @@ class ServerTest extends TestCase {
 			->expects($this->at(1))
 			->method('getSystemValue')
 			->with('check_for_working_wellknown_setup', true)
-			->willReturn(true);
-		$this->config
-			->expects($this->at(3))
-			->method('getSystemValue')
-			->with('cron_log', true)
 			->willReturn(true);
 		$this->l10n
 			->expects($this->at(0))
@@ -139,7 +134,6 @@ class ServerTest extends TestCase {
 
 				// Background jobs
 				'backgroundjobs_mode' => 'ajax',
-				'cron_log'            => true,
 				'lastcron'            => false,
 				'cronErrors'		  => '',
 				'cli_based_cron_possible' => true,

@@ -183,6 +183,8 @@ class SCSSCacher {
 			$path,
 			\OC::$SERVERROOT . '/core/css/',
 		]);
+		// Continue after throw
+		$scss->setIgnoreErrors(true);
 		if($this->config->getSystemValue('debug')) {
 			// Debug mode
 			$scss->setFormatter(Expanded::class);
@@ -303,6 +305,7 @@ class SCSSCacher {
 	 * @return string
 	 */
 	private function prependBaseurlPrefix($cssFile) {
-		return md5($this->urlGenerator->getBaseUrl()) . '-' . $cssFile;
+		$frontendController = ($this->config->getSystemValue('htaccess.IgnoreFrontController', false) === true || getenv('front_controller_active') === 'true');
+		return md5($this->urlGenerator->getBaseUrl() . $frontendController) . '-' . $cssFile;
 	}
 }

@@ -16,6 +16,7 @@ use OCP\Encryption\IFile;
 use OCP\Encryption\Keys\IStorage;
 use OCP\Files\Cache\ICache;
 use OCP\Files\Mount\IMountPoint;
+use OCP\IConfig;
 use OCP\ILogger;
 use Test\Files\Storage\Storage;
 
@@ -120,7 +121,7 @@ class EncryptionTest extends Storage {
 			->willReturn($mockModule);
 
 		$this->arrayCache = $this->createMock(ArrayCache::class);
-		$this->config = $this->getMockBuilder('\OCP\IConfig')
+		$this->config = $this->getMockBuilder(IConfig::class)
 			->disableOriginalConstructor()
 			->getMock();
 		$this->groupManager = $this->getMockBuilder('\OC\Group\Manager')
@@ -173,8 +174,9 @@ class EncryptionTest extends Storage {
 			->method('get')
 			->willReturnCallback(function($path) {return ['encrypted' => false, 'path' => $path];});
 
-		$this->mountManager = $this->getMockBuilder('\OC\Files\Mount\Manager')
-			->disableOriginalConstructor()->getMock();
+		$this->mountManager = $this->createMock(\OC\Files\Mount\Manager::class);
+		$this->mountManager->method('findByStorageId')
+			->willReturn([]);
 
 		$this->instance = $this->getMockBuilder('\OC\Files\Storage\Wrapper\Encryption')
 			->setConstructorArgs(
@@ -717,7 +719,7 @@ class EncryptionTest extends Storage {
 	}
 
 	public function testCopyBetweenStorageMinimumEncryptedVersion() {
-		$storage2 = $this->getMockBuilder('OCP\Files\Storage')
+		$storage2 = $this->getMockBuilder(Storage::class)
 			->disableOriginalConstructor()
 			->getMock();
 
@@ -766,7 +768,7 @@ class EncryptionTest extends Storage {
 	 * @param bool $expectedEncrypted
 	 */
 	public function testCopyBetweenStorage($encryptionEnabled, $mountPointEncryptionEnabled, $expectedEncrypted) {
-		$storage2 = $this->getMockBuilder('OCP\Files\Storage')
+		$storage2 = $this->getMockBuilder(Storage::class)
 			->disableOriginalConstructor()
 			->getMock();
 
@@ -828,11 +830,11 @@ class EncryptionTest extends Storage {
 	 */
 	public function  testCopyBetweenStorageVersions($sourceInternalPath, $targetInternalPath, $copyResult, $encrypted) {
 
-		$sourceStorage = $this->getMockBuilder('OCP\Files\Storage')
+		$sourceStorage = $this->getMockBuilder(Storage::class)
 			->disableOriginalConstructor()
 			->getMock();
 
-		$targetStorage = $this->getMockBuilder('OCP\Files\Storage')
+		$targetStorage = $this->getMockBuilder(Storage::class)
 			->disableOriginalConstructor()
 			->getMock();
 

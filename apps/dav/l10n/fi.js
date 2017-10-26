@@ -42,9 +42,11 @@ OC.L10N.register(
     "Contact birthdays" : "Yhteystietojen syntymäpäivät",
     "Personal" : "Henkilökohtainen",
     "Contacts" : "Yhteystiedot",
-    "WebDAV" : "WebDAV",
     "Technical details" : "Tekniset yksityiskohdat",
     "Remote Address: %s" : "Etäosoite: %s",
-    "Request ID: %s" : "Pyynnön tunniste: %s"
+    "Request ID: %s" : "Pyynnön tunniste: %s",
+    "CalDAV server" : "CalDAV-palvelin",
+    "Send invitations to attendees" : "Lähetä kutsut osallistujille",
+    "Please make sure to properly set up the email settings above." : "Varmista, että määrität sähköpostiasetukset oikein yläpuolelle. "
 },
 "nplurals=2; plural=(n != 1);");

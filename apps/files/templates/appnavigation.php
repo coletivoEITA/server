@@ -1,6 +1,17 @@
 <div id="app-navigation">
 	<ul class="with-icon">
-		<li id="quota" class="section <?php
+	<?php $pinned = 0 ?>
+		<?php foreach ($_['navigationItems'] as $item) {
+			strpos($item['classes'], 'pinned')!==false ? $pinned++ : '';
+		?>
+		<li data-id="<?php p($item['id']) ?>" class="nav-<?php p($item['id']) ?> <?php p($item['classes']) ?> <?php p($pinned===1?'first-pinned':'') ?>">
+			<a href="<?php p(isset($item['href']) ? $item['href'] : '#') ?>"
+				class="nav-icon-<?php p($item['icon'] !== '' ? $item['icon'] : $item['id']) ?> svg">
+				<?php p($item['name']);?>
+			</a>
+		</li>
+		<?php } ?>
+		<li id="quota" class="pinned <?php
 		if ($_['quota'] !== \OCP\Files\FileInfo::SPACE_UNLIMITED) {
 			?>has-tooltip" title="<?php p($_['usage_relative'] . '%');
 		} ?>">
@@ -12,20 +23,11 @@
 						p($l->t('%s used', [$_['usage']]));
 					} ?></p>
 				<div class="quota-container">
-					<div style="width:<?php p($_['usage_relative']);?>%"
-						 <?php if($_['usage_relative'] > 80): ?>class="quota-warning"<?php endif; ?>>
-					</div>
+					<progress value="<?php p($_['usage_relative']); ?>" max="100"
+						<?php if($_['usage_relative'] > 80): ?> class="warn" <?php endif; ?>></progress>
 				</div>
 			</a>
 		</li>
-		<?php foreach ($_['navigationItems'] as $item) { ?>
-		<li data-id="<?php p($item['id']) ?>" class="nav-<?php p($item['id']) ?>">
-			<a href="<?php p(isset($item['href']) ? $item['href'] : '#') ?>"
-				class="nav-icon-<?php p($item['icon'] !== '' ? $item['icon'] : $item['id']) ?> svg">
-				<?php p($item['name']);?>
-			</a>
-		</li>
-		<?php } ?>
 	</ul>
 	<div id="app-settings">
 		<div id="app-settings-header">

@@ -26,8 +26,10 @@ use OCP\Defaults;
 use OCP\IConfig;
 use OCP\IL10N;
 use OCP\IURLGenerator;
+use OCP\Mail\IEMailTemplate;
 use OCP\Mail\IMailer;
 use OCP\ILogger;
+use OCP\Mail\IMessage;
 
 /**
  * Class Mailer provides some basic functions to create a mail message that can be used in combination with
@@ -83,27 +85,39 @@ class Mailer implements IMailer {
 	/**
 	 * Creates a new message object that can be passed to send()
 	 *
-	 * @return Message
+	 * @return IMessage
 	 */
 	public function createMessage() {
 		return new Message(new \Swift_Message());
 	}
 
-	public function createEMailTemplate() {
+	/**
+	 * Creates a new email template object
+	 *
+	 * @param string $emailId
+	 * @param array $data
+	 * @return IEMailTemplate
+	 * @since 12.0.0
+	 */
+	public function createEMailTemplate($emailId, array $data = []) {
 		$class = $this->config->getSystemValue('mail_template_class', '');
 
 		if ($class !== '' && class_exists($class) && is_a($class, EMailTemplate::class, true)) {
 			return new $class(
 				$this->defaults,
 				$this->urlGenerator,
-				$this->l10n
+				$this->l10n,
+				$emailId,
+				$data
 			);
 		}
 
 		return new EMailTemplate(
 			$this->defaults,
 			$this->urlGenerator,
-			$this->l10n
+			$this->l10n,
+			$emailId,
+			$data
 		);
 	}
 
@@ -111,13 +125,13 @@ class Mailer implements IMailer {
 	 * Send the specified message. Also sets the from address to the value defined in config.php
 	 * if no-one has been passed.
 	 *
-	 * @param Message $message Message to send
+	 * @param IMessage|Message $message Message to send
 	 * @return string[] Array with failed recipients. Be aware that this depends on the used mail backend and
 	 * therefore should be considered
 	 * @throws \Exception In case it was not possible to send the message. (for example if an invalid mail address
 	 * has been supplied.)
 	 */
-	public function send(Message $message) {
+	public function send(IMessage $message) {
 		$debugMode = $this->config->getSystemValue('mail_smtpdebug', false);
 
 		if (empty($message->getFrom())) {
@@ -170,7 +184,7 @@ class Mailer implements IMailer {
 		}
 
 		list($name, $domain) = explode('@', $email, 2);
-		$domain = idn_to_ascii($domain);
+		$domain = idn_to_ascii($domain, 0,INTL_IDNA_VARIANT_UTS46);
 		return $name.'@'.$domain;
 	}
 

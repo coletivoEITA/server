@@ -65,6 +65,7 @@ class Log implements ILogger {
 		'completeLogin',
 		'login',
 		'checkPassword',
+		'checkPasswordNoLogging',
 		'loginWithPassword',
 		'updatePrivateKeyPassword',
 		'validateUserPass',
@@ -82,14 +83,19 @@ class Log implements ILogger {
 		'solveChallenge',
 		'verifyChallenge',
 
-		//ICrypto
+		// ICrypto
 		'calculateHMAC',
 		'encrypt',
 		'decrypt',
 
-		//LoginController
+		// LoginController
 		'tryLogin',
 		'confirmPassword',
+
+		// LDAP
+		'bind',
+		'areCredentialsValid',
+		'invokeLDAPMethod',
 	];
 
 	/**
@@ -97,7 +103,7 @@ class Log implements ILogger {
 	 * @param SystemConfig $config the system config object
 	 * @param null $normalizer
 	 */
-	public function __construct($logger=null, SystemConfig $config=null, $normalizer = null) {
+	public function __construct($logger = null, SystemConfig $config = null, $normalizer = null) {
 		// FIXME: Add this for backwards compatibility, should be fixed at some point probably
 		if($config === null) {
 			$config = \OC::$server->getSystemConfig();
@@ -325,6 +331,9 @@ class Log implements ILogger {
 			'Line' => $exception->getLine(),
 		);
 		$data['Trace'] = preg_replace('!(' . implode('|', $this->methodsWithSensitiveParameters) . ')\(.*\)!', '$1(*** sensitive parameters replaced ***)', $data['Trace']);
+		if ($exception instanceof HintException) {
+			$data['Hint'] = $exception->getHint();
+		}
 		$msg = isset($context['message']) ? $context['message'] : 'Exception';
 		$msg .= ': ' . json_encode($data);
 		$this->log($level, $msg, $context);

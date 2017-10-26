@@ -45,7 +45,13 @@ class EMailTemplate implements IEMailTemplate {
 	protected $urlGenerator;
 	/** @var IL10N */
 	protected $l10n;
+	/** @var string */
+	protected $emailId;
+	/** @var array */
+	protected $data;
 
+	/** @var string */
+	protected $subject = '';
 	/** @var string */
 	protected $htmlBody = '';
 	/** @var string */
@@ -338,14 +344,29 @@ EOF;
 	 * @param Defaults $themingDefaults
 	 * @param IURLGenerator $urlGenerator
 	 * @param IL10N $l10n
+	 * @param string $emailId
+	 * @param array $data
 	 */
 	public function __construct(Defaults $themingDefaults,
 								IURLGenerator $urlGenerator,
-								IL10N $l10n) {
+								IL10N $l10n,
+								$emailId,
+								array $data) {
 		$this->themingDefaults = $themingDefaults;
 		$this->urlGenerator = $urlGenerator;
 		$this->l10n = $l10n;
 		$this->htmlBody .= $this->head;
+		$this->emailId = $emailId;
+		$this->data = $data;
+	}
+
+	/**
+	 * Sets the subject of the email
+	 *
+	 * @param string $subject
+	 */
+	public function setSubject($subject) {
+		$this->subject = $subject;
 	}
 
 	/**
@@ -583,6 +604,15 @@ EOF;
 		$this->htmlBody .= $this->tail;
 		$this->plainBody .= PHP_EOL . '-- ' . PHP_EOL;
 		$this->plainBody .= str_replace('<br>', PHP_EOL, $text);
+	}
+
+	/**
+	 * Returns the rendered email subject as string
+	 *
+	 * @return string
+	 */
+	public function renderSubject() {
+		return $this->subject;
 	}
 
 	/**

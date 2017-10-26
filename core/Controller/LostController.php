@@ -167,7 +167,7 @@ class LostController extends Controller {
 	 */
 	protected function checkPasswordResetToken($token, $userId) {
 		$user = $this->userManager->get($userId);
-		if($user === null) {
+		if($user === null || !$user->isEnabled()) {
 			throw new \Exception($this->l10n->t('Couldn\'t reset password because the token is invalid'));
 		}
 
@@ -305,8 +305,11 @@ class LostController extends Controller {
 
 		$link = $this->urlGenerator->linkToRouteAbsolute('core.lost.resetform', array('userId' => $user->getUID(), 'token' => $token));
 
-		$emailTemplate = $this->mailer->createEMailTemplate();
+		$emailTemplate = $this->mailer->createEMailTemplate('core.ResetPassword', [
+			'link' => $link,
+		]);
 
+		$emailTemplate->setSubject($this->l10n->t('%s password reset', [$this->defaults->getName()]));
 		$emailTemplate->addHeader();
 		$emailTemplate->addHeading($this->l10n->t('Password reset'));
 
@@ -325,10 +328,8 @@ class LostController extends Controller {
 		try {
 			$message = $this->mailer->createMessage();
 			$message->setTo([$email => $user->getUID()]);
-			$message->setSubject($this->l10n->t('%s password reset', [$this->defaults->getName()]));
-			$message->setPlainBody($emailTemplate->renderText());
-			$message->setHtmlBody($emailTemplate->renderHtml());
 			$message->setFrom([$this->from => $this->defaults->getName()]);
+			$message->useTemplate($emailTemplate);
 			$this->mailer->send($message);
 		} catch (\Exception $e) {
 			throw new \Exception($this->l10n->t(
@@ -340,16 +341,25 @@ class LostController extends Controller {
 	/**
 	 * @param string $input
 	 * @return IUser
-	 * @throws \Exception
+	 * @throws \InvalidArgumentException
 	 */
 	protected function findUserByIdOrMail($input) {
 		$user = $this->userManager->get($input);
 		if ($user instanceof IUser) {
+			if (!$user->isEnabled()) {
+				throw new \InvalidArgumentException($this->l10n->t('Couldn\'t send reset email. Please make sure your username is correct.'));
+			}
+
 			return $user;
 		}
 		$users = $this->userManager->getByEmail($input);
 		if (count($users) === 1) {
-			return $users[0];
+			$user = $users[0];
+			if (!$user->isEnabled()) {
+				throw new \InvalidArgumentException($this->l10n->t('Couldn\'t send reset email. Please make sure your username is correct.'));
+			}
+
+			return $user;
 		}
 
 		throw new \InvalidArgumentException($this->l10n->t('Couldn\'t send reset email. Please make sure your username is correct.'));

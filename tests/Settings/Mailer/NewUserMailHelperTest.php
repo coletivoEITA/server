@@ -66,7 +66,9 @@ class NewUserMailHelperTest extends TestCase {
 		$template = new EMailTemplate(
 			$this->defaults,
 			$this->urlGenerator,
-			$this->l10n
+			$this->l10n,
+			'test.TestTemplate',
+			[]
 		);
 		$this->mailer->method('createEMailTemplate')
 			->will($this->returnValue($template));
@@ -235,7 +237,7 @@ class NewUserMailHelperTest extends TestCase {
 			<table style="border-collapse:collapse;border-spacing:0;padding:0;text-align:left;vertical-align:top;width:100%">
 				<tr style="padding:0;text-align:left;vertical-align:top">
 					<th style="Margin:0;color:#0a0a0a;font-family:Lucida Grande,Geneva,Verdana,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0;padding:0;text-align:left">
-						<p class="text-left" style="Margin:0;Margin-bottom:10px;color:#777;font-family:Lucida Grande,Geneva,Verdana,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0;margin-bottom:10px;padding:0;text-align:left">You have now an TestCloud account, you can add, protect, and share your data.</p>
+						<p class="text-left" style="Margin:0;Margin-bottom:10px;color:#777;font-family:Lucida Grande,Geneva,Verdana,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0;margin-bottom:10px;padding:0;text-align:left">You now have an TestCloud account, you can add, protect, and share your data.</p>
 					</th>
 					<th class="expander" style="Margin:0;color:#0a0a0a;font-family:Lucida Grande,Geneva,Verdana,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0;padding:0!important;text-align:left;visibility:hidden;width:0"></th>
 				</tr>
@@ -348,7 +350,7 @@ EOF;
 		$expectedTextBody = <<<EOF
 Welcome aboard
 
-You have now an TestCloud account, you can add, protect, and share your data.
+You now have an TestCloud account, you can add, protect, and share your data.
 
 Your username is: john
 
@@ -468,7 +470,7 @@ EOF;
 			<table style="border-collapse:collapse;border-spacing:0;padding:0;text-align:left;vertical-align:top;width:100%">
 				<tr style="padding:0;text-align:left;vertical-align:top">
 					<th style="Margin:0;color:#0a0a0a;font-family:Lucida Grande,Geneva,Verdana,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0;padding:0;text-align:left">
-						<p class="text-left" style="Margin:0;Margin-bottom:10px;color:#777;font-family:Lucida Grande,Geneva,Verdana,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0;margin-bottom:10px;padding:0;text-align:left">You have now an TestCloud account, you can add, protect, and share your data.</p>
+						<p class="text-left" style="Margin:0;Margin-bottom:10px;color:#777;font-family:Lucida Grande,Geneva,Verdana,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0;margin-bottom:10px;padding:0;text-align:left">You now have an TestCloud account, you can add, protect, and share your data.</p>
 					</th>
 					<th class="expander" style="Margin:0;color:#0a0a0a;font-family:Lucida Grande,Geneva,Verdana,sans-serif;font-size:16px;font-weight:400;line-height:1.3;margin:0;padding:0!important;text-align:left;visibility:hidden;width:0"></th>
 				</tr>
@@ -581,7 +583,7 @@ EOF;
 		$expectedTextBody = <<<EOF
 Welcome aboard John Doe
 
-You have now an TestCloud account, you can add, protect, and share your data.
+You now have an TestCloud account, you can add, protect, and share your data.
 
 Your username is: john
 
@@ -618,26 +620,18 @@ EOF;
 			->expects($this->at(0))
 			->method('setTo')
 			->with(['recipient@example.com' => 'John Doe']);
-		$this->defaults
-			->expects($this->exactly(2))
-			->method('getName')
-			->willReturn('TestCloud');
 		$message
 			->expects($this->at(1))
-			->method('setSubject')
-			->with('Your TestCloud account was created');
-		$message
-			->expects($this->at(2))
-			->method('setHtmlBody')
-			->with($emailTemplate->renderHtml());
-		$message
-			->expects($this->at(3))
-			->method('setPlainBody')
-			->with($emailTemplate->renderText());
-		$message
-			->expects($this->at(4))
 			->method('setFrom')
 			->with(['no-reply@nextcloud.com' => 'TestCloud']);
+		$message
+			->expects($this->at(2))
+			->method('useTemplate')
+			->with($emailTemplate);
+		$this->defaults
+			->expects($this->exactly(1))
+			->method('getName')
+			->willReturn('TestCloud');
 		$this->mailer
 			->expects($this->once())
 			->method('createMessage')

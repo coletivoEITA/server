@@ -42,9 +42,10 @@ OC.L10N.register(
     "Contact birthdays" : "Kontakters fødelsdag",
     "Personal" : "Personlig",
     "Contacts" : "Kontakter",
-    "WebDAV" : "WebDAV",
     "Technical details" : "Tekniske detaljer",
     "Remote Address: %s" : "Ekstern adresse: %s",
-    "Request ID: %s" : "Forespørsel ID: %s"
+    "Request ID: %s" : "Forespørsel ID: %s",
+    "CalDAV server" : "DalDAV-tjener",
+    "Send invitations to attendees" : "Send invitasjoner til oppmøtte"
 },
 "nplurals=2; plural=(n != 1);");

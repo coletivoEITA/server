@@ -28,6 +28,7 @@
  */
 namespace OCA\DAV;
 
+use OC\AppFramework\Utility\TimeFactory;
 use OCA\DAV\CalDAV\Schedule\IMipPlugin;
 use OCA\DAV\CardDAV\ImageExportPlugin;
 use OCA\DAV\CardDAV\PhotoCache;
@@ -35,6 +36,7 @@ use OCA\DAV\Comments\CommentsPlugin;
 use OCA\DAV\Connector\Sabre\Auth;
 use OCA\DAV\Connector\Sabre\BearerAuth;
 use OCA\DAV\Connector\Sabre\BlockLegacyClientPlugin;
+use OCA\DAV\Connector\Sabre\CachingTree;
 use OCA\DAV\Connector\Sabre\CommentPropertiesPlugin;
 use OCA\DAV\Connector\Sabre\CopyEtagHeaderPlugin;
 use OCA\DAV\Connector\Sabre\DavAclPlugin;
@@ -53,8 +55,8 @@ use OCP\SabrePluginEvent;
 use Sabre\CardDAV\VCFExportPlugin;
 use Sabre\DAV\Auth\Plugin;
 use OCA\DAV\Connector\Sabre\TagsPlugin;
-use Sabre\HTTP\Auth\Bearer;
 use SearchDAV\DAV\SearchPlugin;
+use OCA\DAV\AppInfo\PluginManager;
 
 class Server {
 
@@ -73,9 +75,11 @@ class Server {
 		$logger = \OC::$server->getLogger();
 		$mailer = \OC::$server->getMailer();
 		$dispatcher = \OC::$server->getEventDispatcher();
+		$timezone = new TimeFactory();
+		$sendInvitations = \OC::$server->getConfig()->getAppValue('dav', 'sendInvitations', 'yes') === 'yes';
 
 		$root = new RootCollection();
-		$this->server = new \OCA\DAV\Connector\Sabre\Server($root);
+		$this->server = new \OCA\DAV\Connector\Sabre\Server(new CachingTree($root));
 
 		// Add maintenance plugin
 		$this->server->addPlugin(new \OCA\DAV\Connector\Sabre\MaintenancePlugin(\OC::$server->getConfig()));
@@ -134,7 +138,9 @@ class Server {
 		$this->server->addPlugin(new \OCA\DAV\CalDAV\Plugin());
 		$this->server->addPlugin(new \Sabre\CalDAV\ICSExportPlugin());
 		$this->server->addPlugin(new \OCA\DAV\CalDAV\Schedule\Plugin());
-		$this->server->addPlugin(new IMipPlugin($mailer, $logger));
+		if ($sendInvitations) {
+			$this->server->addPlugin(new IMipPlugin($mailer, $logger, $timezone));
+		}
 		$this->server->addPlugin(new \Sabre\CalDAV\Subscriptions\Plugin());
 		$this->server->addPlugin(new \Sabre\CalDAV\Notifications\Plugin());
 		$this->server->addPlugin(new DAV\Sharing\Plugin($authBackend, \OC::$server->getRequest()));
@@ -163,6 +169,9 @@ class Server {
 
 		$this->server->addPlugin(new CopyEtagHeaderPlugin());
 
+		// allow setup of additional plugins
+		$dispatcher->dispatch('OCA\DAV\Connector\Sabre::addPlugin', $event);
+
 		// Some WebDAV clients do require Class 2 WebDAV support (locking), since
 		// we do not provide locking we emulate it using a fake locking plugin.
 		if($request->isUserAgent([
@@ -178,7 +187,7 @@ class Server {
 		}
 
 		// wait with registering these until auth is handled and the filesystem is setup
-		$this->server->on('beforeMethod', function () {
+		$this->server->on('beforeMethod', function () use ($root) {
 			// custom properties plugin must be the last one
 			$userSession = \OC::$server->getUserSession();
 			$user = $userSession->getUser();
@@ -206,7 +215,7 @@ class Server {
 				);
 				if ($view !== null) {
 					$this->server->addPlugin(
-						new QuotaPlugin($view));
+						new QuotaPlugin($view, false));
 				}
 				$this->server->addPlugin(
 					new TagsPlugin(
@@ -245,6 +254,18 @@ class Server {
 						$view
 					)));
 				}
+			}
+
+			// register plugins from apps
+			$pluginManager = new PluginManager(
+				\OC::$server,
+				\OC::$server->getAppManager()
+			);
+			foreach ($pluginManager->getAppPlugins() as $appPlugin) {
+				$this->server->addPlugin($appPlugin);
+			}
+			foreach ($pluginManager->getAppCollections() as $appCollection) {
+				$root->addChild($appCollection);
 			}
 		});
 	}

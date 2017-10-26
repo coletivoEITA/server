@@ -31,7 +31,6 @@ use OC\Cache\CappedMemoryCache;
 use OC\Files\Mount\MoveableMount;
 use OC\HintException;
 use OC\Share20\Exception\ProviderException;
-use OCP\Defaults;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
@@ -44,6 +43,7 @@ use OCP\ILogger;
 use OCP\IURLGenerator;
 use OCP\IUser;
 use OCP\IUserManager;
+use OCP\L10N\IFactory;
 use OCP\Mail\IMailer;
 use OCP\Security\IHasher;
 use OCP\Security\ISecureRandom;
@@ -76,6 +76,8 @@ class Manager implements IManager {
 	private $groupManager;
 	/** @var IL10N */
 	private $l;
+	/** @var IFactory */
+	private $l10nFactory;
 	/** @var IUserManager */
 	private $userManager;
 	/** @var IRootFolder */
@@ -104,6 +106,7 @@ class Manager implements IManager {
 	 * @param IMountManager $mountManager
 	 * @param IGroupManager $groupManager
 	 * @param IL10N $l
+	 * @param IFactory $l10nFactory
 	 * @param IProviderFactory $factory
 	 * @param IUserManager $userManager
 	 * @param IRootFolder $rootFolder
@@ -120,6 +123,7 @@ class Manager implements IManager {
 			IMountManager $mountManager,
 			IGroupManager $groupManager,
 			IL10N $l,
+			IFactory $l10nFactory,
 			IProviderFactory $factory,
 			IUserManager $userManager,
 			IRootFolder $rootFolder,
@@ -135,6 +139,7 @@ class Manager implements IManager {
 		$this->mountManager = $mountManager;
 		$this->groupManager = $groupManager;
 		$this->l = $l;
+		$this->l10nFactory = $l10nFactory;
 		$this->factory = $factory;
 		$this->userManager = $userManager;
 		$this->rootFolder = $rootFolder;
@@ -636,27 +641,11 @@ class Manager implements IManager {
 		$target = \OC\Files\Filesystem::normalizePath($target);
 		$share->setTarget($target);
 
-		// Pre share hook
-		$run = true;
-		$error = '';
-		$preHookData = [
-			'itemType' => $share->getNode() instanceof \OCP\Files\File ? 'file' : 'folder',
-			'itemSource' => $share->getNode()->getId(),
-			'shareType' => $share->getShareType(),
-			'uidOwner' => $share->getSharedBy(),
-			'permissions' => $share->getPermissions(),
-			'fileSource' => $share->getNode()->getId(),
-			'expiration' => $share->getExpirationDate(),
-			'token' => $share->getToken(),
-			'itemTarget' => $share->getTarget(),
-			'shareWith' => $share->getSharedWith(),
-			'run' => &$run,
-			'error' => &$error,
-		];
-		\OC_Hook::emit('OCP\Share', 'pre_shared', $preHookData);
-
-		if ($run === false) {
-			throw new \Exception($error);
+		// Pre share event
+		$event = new GenericEvent($share);
+		$a = $this->eventDispatcher->dispatch('OCP\Share::preShare', $event);
+		if ($event->isPropagationStopped() && $event->hasArgument('error')) {
+			throw new \Exception($event->getArgument('error'));
 		}
 
 		$oldShare = $share;
@@ -665,34 +654,24 @@ class Manager implements IManager {
 		//reuse the node we already have
 		$share->setNode($oldShare->getNode());
 
-		// Post share hook
-		$postHookData = [
-			'itemType' => $share->getNode() instanceof \OCP\Files\File ? 'file' : 'folder',
-			'itemSource' => $share->getNode()->getId(),
-			'shareType' => $share->getShareType(),
-			'uidOwner' => $share->getSharedBy(),
-			'permissions' => $share->getPermissions(),
-			'fileSource' => $share->getNode()->getId(),
-			'expiration' => $share->getExpirationDate(),
-			'token' => $share->getToken(),
-			'id' => $share->getId(),
-			'shareWith' => $share->getSharedWith(),
-			'itemTarget' => $share->getTarget(),
-			'fileTarget' => $share->getTarget(),
-		];
-
-		\OC_Hook::emit('OCP\Share', 'post_shared', $postHookData);
+		// Post share event
+		$event = new GenericEvent($share);
+		$this->eventDispatcher->dispatch('OCP\Share::postShare', $event);
 
 		if ($share->getShareType() === \OCP\Share::SHARE_TYPE_USER) {
 			$user = $this->userManager->get($share->getSharedWith());
 			if ($user !== null) {
 				$emailAddress = $user->getEMailAddress();
 				if ($emailAddress !== null && $emailAddress !== '') {
+					$userLang = $this->config->getUserValue($share->getSharedWith(), 'core', 'lang', null);
+					$l = $this->l10nFactory->get('lib', $userLang);
 					$this->sendMailNotification(
+						$l,
 						$share->getNode()->getName(),
 						$this->urlGenerator->linkToRouteAbsolute('files.viewcontroller.showFile', [ 'fileid' => $share->getNode()->getId() ]),
 						$share->getSharedBy(),
-						$emailAddress
+						$emailAddress,
+						$share->getExpirationDate()
 					);
 					$this->logger->debug('Send share notification to ' . $emailAddress . ' for share with ID ' . $share->getId(), ['app' => 'share']);
 				} else {
@@ -707,34 +686,44 @@ class Manager implements IManager {
 	}
 
 	/**
+	 * @param IL10N $l Language of the recipient
 	 * @param string $filename file/folder name
 	 * @param string $link link to the file/folder
 	 * @param string $initiator user ID of share sender
 	 * @param string $shareWith email address of share receiver
+	 * @param \DateTime|null $expiration
 	 * @throws \Exception If mail couldn't be sent
 	 */
-	protected function sendMailNotification($filename,
+	protected function sendMailNotification(IL10N $l,
+											$filename,
 											$link,
 											$initiator,
-											$shareWith) {
+											$shareWith,
+											\DateTime $expiration = null) {
 		$initiatorUser = $this->userManager->get($initiator);
 		$initiatorDisplayName = ($initiatorUser instanceof IUser) ? $initiatorUser->getDisplayName() : $initiator;
-		$subject = (string)$this->l->t('%s shared »%s« with you', array($initiatorDisplayName, $filename));
 
 		$message = $this->mailer->createMessage();
 
-		$emailTemplate = $this->mailer->createEMailTemplate();
+		$emailTemplate = $this->mailer->createEMailTemplate('files_sharing.RecipientNotification', [
+			'filename' => $filename,
+			'link' => $link,
+			'initiator' => $initiatorDisplayName,
+			'expiration' => $expiration,
+			'shareWith' => $shareWith,
+		]);
 
+		$emailTemplate->setSubject($l->t('%s shared »%s« with you', array($initiatorDisplayName, $filename)));
 		$emailTemplate->addHeader();
-		$emailTemplate->addHeading($this->l->t('%s shared »%s« with you', [$initiatorDisplayName, $filename]), false);
-		$text = $this->l->t('%s shared »%s« with you.', [$initiatorDisplayName, $filename]);
+		$emailTemplate->addHeading($l->t('%s shared »%s« with you', [$initiatorDisplayName, $filename]), false);
+		$text = $l->t('%s shared »%s« with you.', [$initiatorDisplayName, $filename]);
 
 		$emailTemplate->addBodyText(
-			$text . ' ' . $this->l->t('Click the button below to open it.'),
+			$text . ' ' . $l->t('Click the button below to open it.'),
 			$text
 		);
 		$emailTemplate->addBodyButton(
-			$this->l->t('Open »%s«', [$filename]),
+			$l->t('Open »%s«', [$filename]),
 			$link
 		);
 
@@ -742,7 +731,7 @@ class Manager implements IManager {
 
 		// The "From" contains the sharers name
 		$instanceName = $this->defaults->getName();
-		$senderName = $this->l->t(
+		$senderName = $l->t(
 			'%s via %s',
 			[
 				$initiatorDisplayName,
@@ -756,14 +745,12 @@ class Manager implements IManager {
 		$initiatorEmail = $initiatorUser->getEMailAddress();
 		if($initiatorEmail !== null) {
 			$message->setReplyTo([$initiatorEmail => $initiatorDisplayName]);
-			$emailTemplate->addFooter($instanceName . ' - ' . $this->defaults->getSlogan());
+			$emailTemplate->addFooter($instanceName . ($this->defaults->getSlogan() !== '' ? ' - ' . $this->defaults->getSlogan() : ''));
 		} else {
 			$emailTemplate->addFooter();
 		}
 
-		$message->setSubject($subject);
-		$message->setPlainBody($emailTemplate->renderText());
-		$message->setHtmlBody($emailTemplate->renderHtml());
+		$message->useTemplate($emailTemplate);
 		$this->mailer->send($message);
 	}
 
@@ -1064,6 +1051,11 @@ class Manager implements IManager {
 				}
 			}
 
+			// If we did not fetch more shares than the limit then there are no more shares
+			if (count($shares) < $limit) {
+				break;
+			}
+
 			if (count($shares2) === $limit) {
 				break;
 			}
@@ -1183,6 +1175,15 @@ class Manager implements IManager {
 		if ($share === null && $this->shareProviderExists(\OCP\Share::SHARE_TYPE_EMAIL)) {
 			try {
 				$provider = $this->factory->getProviderForType(\OCP\Share::SHARE_TYPE_EMAIL);
+				$share = $provider->getShareByToken($token);
+			} catch (ProviderException $e) {
+			} catch (ShareNotFound $e) {
+			}
+		}
+
+		if ($share === null && $this->shareProviderExists(\OCP\Share::SHARE_TYPE_CIRCLE)) {
+			try {
+				$provider = $this->factory->getProviderForType(\OCP\Share::SHARE_TYPE_CIRCLE);
 				$share = $provider->getShareByToken($token);
 			} catch (ProviderException $e) {
 			} catch (ShareNotFound $e) {
@@ -1394,7 +1395,7 @@ class Manager implements IManager {
 
 	/**
 	 * Create a new share
-	 * @return \OCP\Share\IShare;
+	 * @return \OCP\Share\IShare
 	 */
 	public function newShare() {
 		return new \OC\Share20\Share($this->rootFolder, $this->userManager);

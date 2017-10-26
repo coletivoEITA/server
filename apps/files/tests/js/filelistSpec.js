@@ -712,8 +712,14 @@ describe('OCA.Files.FileList tests', function() {
 				fileList.add(testFiles[i], {silent: true});
 			}
 
+			$tr = fileList.findFileEl('One.txt');
+			expect($tr.find('a.name').css('display')).not.toEqual('none');
+
 			// trigger rename prompt
 			fileList.rename('One.txt');
+
+			expect($tr.find('a.name').css('display')).toEqual('none');
+
 			$input = fileList.$fileList.find('input.filename');
 			$input.val('Two.jpg');
 
@@ -735,12 +741,12 @@ describe('OCA.Files.FileList tests', function() {
 			$tr = fileList.findFileEl('One.txt');
 			expect($tr.length).toEqual(1);
 			expect($tr.find('a .nametext').text().trim()).toEqual('One.txt');
-			expect($tr.find('a.name').is(':visible')).toEqual(true);
+			expect($tr.find('a.name').css('display')).not.toEqual('none');
 
 			$tr = fileList.findFileEl('Two.jpg');
 			expect($tr.length).toEqual(1);
 			expect($tr.find('a .nametext').text().trim()).toEqual('Two.jpg');
-			expect($tr.find('a.name').is(':visible')).toEqual(true);
+			expect($tr.find('a.name').css('display')).not.toEqual('none');
 
 			// input and form are gone
 			expect(fileList.$fileList.find('input.filename').length).toEqual(0);
@@ -749,8 +755,8 @@ describe('OCA.Files.FileList tests', function() {
 		it('Restores thumbnail when rename was cancelled', function() {
 			doRename();
 
-			expect(OC.TestUtil.getImageUrl(fileList.findFileEl('Tu_after_three.txt').find('.thumbnail')))
-				.toEqual(OC.imagePath('core', 'loading.gif'));
+			expect(fileList.findFileEl('Tu_after_three.txt').find('.thumbnail').parent().attr('class'))
+				.toContain('icon-loading-small');
 
 			deferredRename.reject(409);
 
@@ -837,8 +843,8 @@ describe('OCA.Files.FileList tests', function() {
 		it('Restores thumbnail if a file could not be moved', function() {
 			fileList.move('One.txt', '/somedir');
 
-			expect(OC.TestUtil.getImageUrl(fileList.findFileEl('One.txt').find('.thumbnail')))
-				.toEqual(OC.imagePath('core', 'loading.gif'));
+			expect(fileList.findFileEl('One.txt').find('.thumbnail').parent().attr('class'))
+				.toContain('icon-loading-small');
 
 			expect(moveStub.calledOnce).toEqual(true);
 
@@ -853,6 +859,104 @@ describe('OCA.Files.FileList tests', function() {
 				.toEqual(OC.imagePath('core', 'filetypes/text.svg'));
 		});
 	});
+
+	describe('Copying files', function() {
+		var deferredCopy;
+		var copyStub;
+
+		beforeEach(function() {
+			deferredCopy = $.Deferred();
+			copyStub = sinon.stub(filesClient, 'copy').returns(deferredCopy.promise());
+
+			fileList.setFiles(testFiles);
+		});
+		afterEach(function() {
+			copyStub.restore();
+		});
+
+		it('Copies single file to target folder', function() {
+			fileList.copy('One.txt', '/somedir');
+
+			expect(copyStub.calledOnce).toEqual(true);
+			expect(copyStub.getCall(0).args[0]).toEqual('/subdir/One.txt');
+			expect(copyStub.getCall(0).args[1]).toEqual('/somedir/One.txt');
+
+			deferredCopy.resolve(201);
+
+			// File is still here
+			expect(fileList.findFileEl('One.txt').length).toEqual(1);
+
+			// folder size has increased
+			expect(fileList.findFileEl('somedir').data('size')).toEqual(262);
+			expect(fileList.findFileEl('somedir').find('.filesize').text()).toEqual('262 B');
+
+			// Copying sents a notification to tell that we've successfully copied file
+			expect(notificationStub.notCalled).toEqual(false);
+		});
+		it('Copies list of files to target folder', function() {
+			var deferredCopy1 = $.Deferred();
+			var deferredCopy2 = $.Deferred();
+			copyStub.onCall(0).returns(deferredCopy1.promise());
+			copyStub.onCall(1).returns(deferredCopy2.promise());
+
+			fileList.copy(['One.txt', 'Two.jpg'], '/somedir');
+
+			expect(copyStub.calledTwice).toEqual(true);
+			expect(copyStub.getCall(0).args[0]).toEqual('/subdir/One.txt');
+			expect(copyStub.getCall(0).args[1]).toEqual('/somedir/One.txt');
+			expect(copyStub.getCall(1).args[0]).toEqual('/subdir/Two.jpg');
+			expect(copyStub.getCall(1).args[1]).toEqual('/somedir/Two.jpg');
+
+			deferredCopy1.resolve(201);
+
+			expect(fileList.findFileEl('One.txt').length).toEqual(1);
+
+			// folder size has increased during copy
+			expect(fileList.findFileEl('somedir').data('size')).toEqual(262);
+			expect(fileList.findFileEl('somedir').find('.filesize').text()).toEqual('262 B');
+
+			deferredCopy2.resolve(201);
+
+			expect(fileList.findFileEl('Two.jpg').length).toEqual(1);
+
+			// folder size has increased
+			expect(fileList.findFileEl('somedir').data('size')).toEqual(12311);
+			expect(fileList.findFileEl('somedir').find('.filesize').text()).toEqual('12 KB');
+
+			expect(notificationStub.notCalled).toEqual(false);
+		});
+		it('Shows notification if a file could not be copied', function() {
+			fileList.copy('One.txt', '/somedir');
+
+			expect(copyStub.calledOnce).toEqual(true);
+
+			deferredCopy.reject(409);
+
+			expect(fileList.findFileEl('One.txt').length).toEqual(1);
+
+			expect(notificationStub.calledOnce).toEqual(true);
+			expect(notificationStub.getCall(0).args[0]).toEqual('Could not copy "One.txt"');
+		});
+		it('Restores thumbnail if a file could not be copied', function() {
+			fileList.copy('One.txt', '/somedir');
+
+			expect(fileList.findFileEl('One.txt').find('.thumbnail').parent().attr('class'))
+				.toContain('icon-loading-small');
+
+			expect(copyStub.calledOnce).toEqual(true);
+
+			deferredCopy.reject(409);
+
+			expect(fileList.findFileEl('One.txt').length).toEqual(1);
+
+			expect(notificationStub.calledOnce).toEqual(true);
+			expect(notificationStub.getCall(0).args[0]).toEqual('Could not copy "One.txt"');
+
+			expect(OC.TestUtil.getImageUrl(fileList.findFileEl('One.txt').find('.thumbnail')))
+				.toEqual(OC.imagePath('core', 'filetypes/text.svg'));
+		});
+	});
+
 	describe('Update file', function() {
 		it('does not change summary', function() {
 			var $summary = $('#filestable .summary');
@@ -1643,7 +1747,7 @@ describe('OCA.Files.FileList tests', function() {
 		it('Selects a file when clicking its checkbox', function() {
 			var $tr = fileList.findFileEl('One.txt');
 			expect($tr.find('input:checkbox').prop('checked')).toEqual(false);
-			$tr.find('td.filename input:checkbox').click();
+			$tr.find('td.selection input:checkbox').click();
 
 			expect($tr.find('input:checkbox').prop('checked')).toEqual(true);
 		});
@@ -1681,7 +1785,7 @@ describe('OCA.Files.FileList tests', function() {
 			var $tr = fileList.findFileEl('One.txt');
 			var $tr2 = fileList.findFileEl('Three.pdf');
 			var e;
-			$tr.find('td.filename input:checkbox').click();
+			$tr.find('td.selection input:checkbox').click();
 			e = new $.Event('click');
 			e.shiftKey = true;
 			$tr2.find('td.filename .name').trigger(e);
@@ -1699,7 +1803,7 @@ describe('OCA.Files.FileList tests', function() {
 			var $tr = fileList.findFileEl('One.txt');
 			var $tr2 = fileList.findFileEl('Three.pdf');
 			var e;
-			$tr2.find('td.filename input:checkbox').click();
+			$tr2.find('td.selection input:checkbox').click();
 			e = new $.Event('click');
 			e.shiftKey = true;
 			$tr.find('td.filename .name').trigger(e);
@@ -1715,13 +1819,13 @@ describe('OCA.Files.FileList tests', function() {
 		});
 		it('Selecting all files will automatically check "select all" checkbox', function() {
 			expect($('.select-all').prop('checked')).toEqual(false);
-			$('#fileList tr td.filename input:checkbox').click();
+			$('#fileList tr td.selection input:checkbox').click();
 			expect($('.select-all').prop('checked')).toEqual(true);
 		});
 		it('Selecting all files on the first visible page will not automatically check "select all" checkbox', function() {
 			fileList.setFiles(generateFiles(0, 41));
 			expect($('.select-all').prop('checked')).toEqual(false);
-			$('#fileList tr td.filename input:checkbox').click();
+			$('#fileList tr td.selection input:checkbox').click();
 			expect($('.select-all').prop('checked')).toEqual(false);
 		});
 		it('Selecting all files also selects hidden files when invisible', function() {
@@ -1733,7 +1837,7 @@ describe('OCA.Files.FileList tests', function() {
 				size: 150
 			}));
 			$('.select-all').click();
-			expect($tr.find('td.filename input:checkbox').prop('checked')).toEqual(true);
+			expect($tr.find('td.selection input:checkbox').prop('checked')).toEqual(true);
 			expect(_.pluck(fileList.getSelectedFiles(), 'name')).toContain('.hidden');
 		});
 		it('Clicking "select all" will select/deselect all files', function() {
@@ -2810,6 +2914,8 @@ describe('OCA.Files.FileList tests', function() {
 						target: $target
 					},
 					preventDefault: function () {
+					},
+					stopPropagation: function() {
 					}
 				};
 				uploader.trigger('drop', eventData, data || {});
@@ -3049,8 +3155,9 @@ describe('OCA.Files.FileList tests', function() {
 		it('shows spinner on busy rows', function() {
 			fileList.showFileBusyState('Two.jpg', true);
 			expect($tr.hasClass('busy')).toEqual(true);
-			expect(OC.TestUtil.getImageUrl($tr.find('.thumbnail')))
-				.toEqual(OC.imagePath('core', 'loading.gif'));
+			expect($tr.find('.thumbnail').parent().attr('class'))
+				.toContain('icon-loading-small');
+
 
 			fileList.showFileBusyState('Two.jpg', false);
 			expect($tr.hasClass('busy')).toEqual(false);

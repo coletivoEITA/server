@@ -40,7 +40,7 @@ class RequestTest extends \Test\TestCase {
 		stream_wrapper_register('fakeinput', 'Test\AppFramework\Http\RequestStream');
 
 		$this->secureRandom = $this->getMockBuilder('\OCP\Security\ISecureRandom')->getMock();
-		$this->config = $this->getMockBuilder('\OCP\IConfig')->getMock();
+		$this->config = $this->getMockBuilder(IConfig::class)->getMock();
 		$this->csrfTokenManager = $this->getMockBuilder('\OC\Security\CSRF\CsrfTokenManager')
 			->disableOriginalConstructor()->getMock();
 	}
@@ -1568,8 +1568,18 @@ class RequestTest extends \Test\TestCase {
 	}
 
 	public function testGetCookieParams() {
-		$request = $this->createMock(Request::class);
-		$actual = $this->invokePrivate($request, 'getCookieParams');
+		/** @var Request $request */
+		$request = $this->getMockBuilder(Request::class)
+			->setMethods(['getScriptName'])
+			->setConstructorArgs([
+				[],
+				$this->secureRandom,
+				$this->config,
+				$this->csrfTokenManager,
+				$this->stream
+			])
+			->getMock();
+		$actual = $request->getCookieParams();
 		$this->assertSame(session_get_cookie_params(), $actual);
 	}
 

@@ -23,7 +23,7 @@ body {
 	color: #000;
 	text-align: center;
 	background-color: #0082c9;
-	background-image: url('../img/background.jpg?v=1');
+	background-image: url('../img/background.png?v=2');
 	background-position: 50% 50%;
 	background-repeat: no-repeat;
 	background-size: cover;
@@ -43,7 +43,6 @@ p.info a:hover {
 }
 em {
 	font-style: normal;
-	-ms-filter: 'progid:DXImageTransform.Microsoft.Alpha(Opacity=50)';
 	opacity: .5;
 }
 
@@ -131,6 +130,28 @@ form #datadirField legend {
 }
 
 /* Buttons and input */
+#submit-wrapper {
+	position: relative; /* Make the wrapper the containing block of its
+						   absolutely positioned descendant icons */
+}
+#submit-wrapper .icon-confirm-white {
+	position: absolute;
+	top: 23px;
+	right: 23px;
+}
+#submit-wrapper .icon-loading-small {
+	position: absolute;
+	top: 22px;
+	right: 24px;
+}
+
+#submit-wrapper #submit-icon {
+	pointer-events: none; /* The submit icon is positioned on the submit button.
+							 From the user point of view the icon is part of the
+							 button, so the clicks on the icon have to be
+							 applied to the button instead. */
+}
+
 input, textarea, select, button {
 	font-family: 'Open Sans', Frutiger, Calibri, 'Myriad Pro', Myriad, sans-serif;
 }
@@ -191,8 +212,8 @@ input.update-continue {
 }
 input.primary,
 button.primary {
-	border: 1px solid #0082c9;
-	background-color: #00a2e9;
+	border: 1px solid #fff;
+	background-color: #0082c9;
 	color: #fff;
 }
 
@@ -287,7 +308,6 @@ label.infield {
 	padding: 14px !important;
 }
 #show:checked + label, #dbpassword-toggle:checked + label, #personal-show:checked + label {
-	-ms-filter: 'progid:DXImageTransform.Microsoft.Alpha(Opacity=80)';
 	opacity: .8;
 }
 #show + label, #dbpassword-toggle + label, #personal-show + label {
@@ -297,7 +317,6 @@ label.infield {
 	background-image: url('../img/actions/toggle.svg?v=1');
 	background-repeat: no-repeat;
 	background-position: center;
-	-ms-filter: 'progid:DXImageTransform.Microsoft.Alpha(Opacity=30)';
 	opacity: .3;
 }
 #show + label:before, #dbpassword-toggle + label:before, #personal-show + label:before {
@@ -378,8 +397,23 @@ form .warning input[type='checkbox']+label {
 }
 
 /* Alternative Logins */
-#alternative-logins legend { margin-bottom:10px; }
-#alternative-logins li { height:40px; display:inline-block; white-space:nowrap; }
+#alternative-logins legend {
+	margin-bottom: 10px;
+}
+#alternative-logins li {
+	height: 40px;
+	white-space: nowrap;
+	padding: 05px;
+}
+#alternative-logins li a {
+	width: 100%;
+	display: inline-block;
+	text-align: center;
+	box-sizing: border-box;
+	background-color: #0082c9;
+	color: white;
+	border-radius: 3px;
+}
 
 /* fixes for update page TODO should be fixed some time in a proper way */
 /* this is just for an error while updating the ownCloud instance */
@@ -470,6 +504,11 @@ form #selectDbType label.ui-state-active {
 .warning {
 	margin-top: 15px;
 }
+.warning h2,
+.update h2,
+.error h2 {
+	text-align: center;
+}
 .warning.updateAnyways {
 	text-align: center;
 }
@@ -478,7 +517,6 @@ form #selectDbType label.ui-state-active {
 .error a {
 	color: #fff !important;
 	font-weight: 600 !important;
-	-ms-filter: 'progid:DXImageTransform.Microsoft.Alpha(Opacity=100)';
 	opacity: 1;
 }
 .error a.button {

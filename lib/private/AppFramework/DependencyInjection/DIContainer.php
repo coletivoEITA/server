@@ -171,7 +171,8 @@ class DIContainer extends SimpleContainer implements IAppContainer {
 		$this->registerService(\OC\Security\IdentityProof\Manager::class, function ($c) {
 			return new \OC\Security\IdentityProof\Manager(
 				$this->getServer()->query(\OC\Files\AppData\Factory::class),
-				$this->getServer()->getCrypto()
+				$this->getServer()->getCrypto(),
+				$this->getServer()->getConfig()
 			);
 		});
 
@@ -229,7 +230,8 @@ class DIContainer extends SimpleContainer implements IAppContainer {
 				$app->isAdminUser(),
 				$server->getContentSecurityPolicyManager(),
 				$server->getCsrfTokenManager(),
-				$server->getContentSecurityPolicyNonceManager()
+				$server->getContentSecurityPolicyNonceManager(),
+				$server->getAppManager()
 			);
 
 		});
@@ -290,9 +292,17 @@ class DIContainer extends SimpleContainer implements IAppContainer {
 			);
 		});
 
+		$this->registerService(OC\AppFramework\Middleware\Security\SameSiteCookieMiddleware::class, function (SimpleContainer $c) {
+			return new OC\AppFramework\Middleware\Security\SameSiteCookieMiddleware(
+				$c['Request'],
+				$c['ControllerMethodReflector']
+			);
+		});
+
 		$middleWares = &$this->middleWares;
 		$this->registerService('MiddlewareDispatcher', function($c) use (&$middleWares) {
 			$dispatcher = new MiddlewareDispatcher();
+			$dispatcher->registerMiddleware($c[OC\AppFramework\Middleware\Security\SameSiteCookieMiddleware::class]);
 			$dispatcher->registerMiddleware($c['CORSMiddleware']);
 			$dispatcher->registerMiddleware($c['OCSMiddleware']);
 			$dispatcher->registerMiddleware($c['SecurityMiddleware']);
@@ -411,8 +421,15 @@ class DIContainer extends SimpleContainer implements IAppContainer {
 	public function query($name) {
 		try {
 			return $this->queryNoFallback($name);
-		} catch (QueryException $e) {
-			return $this->getServer()->query($name);
+		} catch (QueryException $firstException) {
+			try {
+				return $this->getServer()->query($name);
+			} catch (QueryException $secondException) {
+				if ($firstException->getCode() === 1) {
+					throw $secondException;
+				}
+				throw $firstException;
+			}
 		}
 	}
 
@@ -437,6 +454,6 @@ class DIContainer extends SimpleContainer implements IAppContainer {
 		}
 
 		throw new QueryException('Could not resolve ' . $name . '!' .
-			' Class can not be instantiated');
+			' Class can not be instantiated', 1);
 	}
 }

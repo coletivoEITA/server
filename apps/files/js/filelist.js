@@ -332,11 +332,12 @@
 
 			this.$fileList.on('click','td.filename>a.name, td.filesize, td.date', _.bind(this._onClickFile, this));
 
-			this.$fileList.on('change', 'td.filename>.selectCheckBox', _.bind(this._onClickFileCheckbox, this));
+			this.$fileList.on('change', 'td.selection>.selectCheckBox', _.bind(this._onClickFileCheckbox, this));
 			this.$el.on('show', _.bind(this._onShow, this));
 			this.$el.on('urlChanged', _.bind(this._onUrlChanged, this));
 			this.$el.find('.select-all').click(_.bind(this._onClickSelectAll, this));
 			this.$el.find('.download').click(_.bind(this._onClickDownloadSelected, this));
+			this.$el.find('.copy-move').click(_.bind(this._onClickCopyMoveSelected, this));
 			this.$el.find('.delete-selected').click(_.bind(this._onClickDeleteSelected, this));
 
 			this.$el.find('.selectedActions a').tooltip({placement:'top'});
@@ -564,6 +565,7 @@
 		 */
 		_onShow: function(e) {
 			if (this.shown) {
+				this._setCurrentDir('/', false);
 				this.reload();
 			}
 			this.shown = true;
@@ -591,7 +593,7 @@
 		 * @param {bool} state true to select, false to deselect
 		 */
 		_selectFileEl: function($tr, state, showDetailsView) {
-			var $checkbox = $tr.find('td.filename>.selectCheckBox');
+			var $checkbox = $tr.find('td.selection>.selectCheckBox');
 			var oldData = !!this._selectedFiles[$tr.data('id')];
 			var data;
 			$checkbox.prop('checked', state);
@@ -647,7 +649,7 @@
 				else {
 					this._lastChecked = $tr;
 				}
-				var $checkbox = $tr.find('td.filename>.selectCheckBox');
+				var $checkbox = $tr.find('td.selection>.selectCheckBox');
 				this._selectFileEl($tr, !$checkbox.prop('checked'));
 				this.updateSelectionSummary();
 			} else {
@@ -702,7 +704,7 @@
 		 */
 		_onClickSelectAll: function(e) {
 			var checked = $(e.target).prop('checked');
-			this.$fileList.find('td.filename>.selectCheckBox').prop('checked', checked)
+			this.$fileList.find('td.selection>.selectCheckBox').prop('checked', checked)
 				.closest('tr').toggleClass('selected', checked);
 			this._selectedFiles = {};
 			this._selectionSummary.clear();
@@ -751,9 +753,41 @@
 				OCA.Files.Files.handleDownload(this.getDownloadUrl(files, dir, true), disableLoadingState);
 			}
 			else {
-				first = this.getSelectedFiles()[0];
+				var first = this.getSelectedFiles()[0];
 				OCA.Files.Files.handleDownload(this.getDownloadUrl(first.name, dir, true), disableLoadingState);
 			}
+			return false;
+		},
+
+		/**
+		 * Event handler for when clicking on "Move" for the selected files
+		 */
+		_onClickCopyMoveSelected: function(event) {
+			var files;
+			var self = this;
+
+			files = _.pluck(this.getSelectedFiles(), 'name');
+
+			var moveFileAction = $('#selectedActionsList').find('.move');
+
+			// don't allow a second click on the download action
+			if(moveFileAction.hasClass('disabled')) {
+				event.preventDefault();
+				return;
+			}
+
+			var disableLoadingState = function(){
+				OCA.Files.FileActions.updateFileActionSpinner(moveFileAction, false);
+			};
+
+			OC.dialogs.filepicker(t('files', 'Target folder'), function(targetPath, type) {
+				if (type === OC.dialogs.FILEPICKER_TYPE_COPY) {
+					self.copy(files, targetPath, disableLoadingState);
+				}
+				if (type === OC.dialogs.FILEPICKER_TYPE_MOVE) {
+					self.move(files, targetPath, disableLoadingState);
+				}
+			}, false, "httpd/unix-directory", true, OC.dialogs.FILEPICKER_TYPE_COPY_MOVE);
 			return false;
 		},
 
@@ -807,7 +841,7 @@
 
 			if ($targetDir !== undefined && e.which === 1) {
 				e.preventDefault();
-				this.changeDirectory($targetDir);
+				this.changeDirectory($targetDir, true, true);
 				this.updateSearch();
 			}
 		},
@@ -1029,6 +1063,13 @@
 
 			this.$fileList.empty();
 
+			if (this._allowSelection) {
+				// The results table, which has no selection column, checks
+				// whether the main table has a selection column or not in order
+				// to align its contents with those of the main table.
+				this.$el.addClass('has-selection');
+			}
+
 			// clear "Select all" checkbox
 			this.$el.find('.select-all').prop('checked', false);
 
@@ -1158,6 +1199,20 @@
 				path = this.getCurrentDirectory();
 			}
 
+			// selection td
+			if (this._allowSelection) {
+				td = $('<td class="selection"></td>');
+
+				td.append(
+					'<input id="select-' + this.id + '-' + fileData.id +
+					'" type="checkbox" class="selectCheckBox checkbox"/><label for="select-' + this.id + '-' + fileData.id + '">' +
+					'<span class="hidden-visually">' + t('files', 'Select') + '</span>' +
+					'</label>'
+				);
+
+				tr.append(td);
+			}
+
 			// filename td
 			td = $('<td class="filename"></td>');
 
@@ -1169,21 +1224,12 @@
 			else {
 				linkUrl = this.getDownloadUrl(name, path, type === 'dir');
 			}
-			if (this._allowSelection) {
-				td.append(
-					'<input id="select-' + this.id + '-' + fileData.id +
-					'" type="checkbox" class="selectCheckBox checkbox"/><label for="select-' + this.id + '-' + fileData.id + '">' +
-					'<div class="thumbnail" style="background-image:url(' + icon + '); background-size: 32px;"></div>' +
-					'<span class="hidden-visually">' + t('files', 'Select') + '</span>' +
-					'</label>'
-				);
-			} else {
-				td.append('<div class="thumbnail" style="background-image:url(' + icon + '); background-size: 32px;"></div>');
-			}
 			var linkElem = $('<a></a>').attr({
 				"class": "name",
 				"href": linkUrl
 			});
+
+			linkElem.append('<div class="thumbnail-wrapper"><div class="thumbnail" style="background-image:url(' + icon + ');"></div></div>');
 
 			// from here work on the display name
 			name = fileData.displayName || name;
@@ -1944,13 +1990,15 @@
 			}
 			return index;
 		},
+
 		/**
 		 * Moves a file to a given target folder.
 		 *
 		 * @param fileNames array of file names to move
 		 * @param targetPath absolute target path
+		 * @param callback function to call when movement is finished
 		 */
-		move: function(fileNames, targetPath) {
+		move: function(fileNames, targetPath, callback) {
 			var self = this;
 			var dir = this.getCurrentDirectory();
 			if (dir.charAt(dir.length - 1) !== '/') {
@@ -1999,8 +2047,117 @@
 					.always(function() {
 						self.showFileBusyState($tr, false);
 					});
+				if (callback) {
+					callback();
+				}
 			});
 
+		},
+
+		/**
+		 * Copies a file to a given target folder.
+		 *
+		 * @param fileNames array of file names to copy
+		 * @param targetPath absolute target path
+		 * @param callback to call when copy is finished with success
+		 */
+		copy: function(fileNames, targetPath, callback) {
+			var self = this;
+			var filesToNotify = [];
+			var count = 0;
+
+			var dir = this.getCurrentDirectory();
+			if (dir.charAt(dir.length - 1) !== '/') {
+				dir += '/';
+			}
+			var target = OC.basename(targetPath);
+			if (!_.isArray(fileNames)) {
+				fileNames = [fileNames];
+			}
+			_.each(fileNames, function(fileName) {
+				var $tr = self.findFileEl(fileName);
+				self.showFileBusyState($tr, true);
+				if (targetPath.charAt(targetPath.length - 1) !== '/') {
+					// make sure we move the files into the target dir,
+					// not overwrite it
+					targetPath = targetPath + '/';
+				}
+				self.filesClient.copy(dir + fileName, targetPath + fileName)
+					.done(function () {
+						filesToNotify.push(fileName);
+
+						// if still viewing the same directory
+						if (OC.joinPaths(self.getCurrentDirectory(), '/') === dir) {
+							// recalculate folder size
+							var oldFile = self.findFileEl(target);
+							var newFile = self.findFileEl(fileName);
+							var oldSize = oldFile.data('size');
+							var newSize = oldSize + newFile.data('size');
+							oldFile.data('size', newSize);
+							oldFile.find('td.filesize').text(OC.Util.humanFileSize(newSize));
+						}
+					})
+					.fail(function(status) {
+						if (status === 412) {
+							// TODO: some day here we should invoke the conflict dialog
+							OC.Notification.show(t('files', 'Could not copy "{file}", target exists',
+								{file: fileName}), {type: 'error'}
+							);
+						} else {
+							OC.Notification.show(t('files', 'Could not copy "{file}"',
+								{file: fileName}), {type: 'error'}
+							);
+						}
+					})
+					.always(function() {
+						self.showFileBusyState($tr, false);
+						count++;
+
+						/**
+						 * We only show the notifications once the last file has been copied
+						 */
+						if (count === fileNames.length) {
+							// Remove leading and ending /
+							if (targetPath.slice(0, 1) === '/') {
+								targetPath = targetPath.slice(1, targetPath.length);
+							}
+							if (targetPath.slice(-1) === '/') {
+								targetPath = targetPath.slice(0, -1);
+							}
+
+							if (filesToNotify.length > 0) {
+								// Since there's no visual indication that the files were copied, let's send some notifications !
+								if (filesToNotify.length === 1) {
+									OC.Notification.show(t('files', 'Copied {origin} inside {destination}',
+										{
+											origin: filesToNotify[0],
+											destination: targetPath
+										}
+									), {timeout: 10});
+								} else if (filesToNotify.length > 0 && filesToNotify.length < 3) {
+									OC.Notification.show(t('files', 'Copied {origin} inside {destination}',
+										{
+											origin: filesToNotify.join(', '),
+											destination: targetPath
+										}
+									), {timeout: 10});
+								} else {
+									OC.Notification.show(t('files', 'Copied {origin} and {nbfiles} other files inside {destination}',
+										{
+											origin: filesToNotify[0],
+											nbfiles: filesToNotify.length - 1,
+											destination: targetPath
+										}
+									), {timeout: 10});
+								}
+							}
+						}
+					});
+			});
+
+			if (callback) {
+				callback();
+			}
 		},
 
 		/**
@@ -2396,11 +2553,9 @@
 				$tr.toggleClass('busy', state);
 
 				if (state) {
-					$thumbEl.attr('data-oldimage', $thumbEl.css('background-image'));
-					$thumbEl.css('background-image', 'url('+ OC.imagePath('core', 'loading.gif') + ')');
+					$thumbEl.parent().addClass('icon-loading-small');
 				} else {
-					$thumbEl.css('background-image', $thumbEl.attr('data-oldimage'));
-					$thumbEl.removeAttr('data-oldimage');
+					$thumbEl.parent().removeClass('icon-loading-small');
 				}
 			});
 		},
@@ -2471,6 +2626,13 @@
 		 */
 		_createSummary: function() {
 			var $tr = $('<tr class="summary"></tr>');
+
+			if (this._allowSelection) {
+				// Dummy column for selection, as all rows must have the same
+				// number of columns.
+				$tr.append('<td></td>');
+			}
+
 			this.$el.find('tfoot').append($tr);
 
 			return new OCA.Files.FileSummary($tr, {config: this._filesConfig});
@@ -2720,7 +2882,7 @@
 		 * Shows a "permission denied" notification
 		 */
 		_showPermissionDeniedNotification: function() {
-			var message = t('core', 'You don’t have permission to upload or create files here');
+			var message = t('files', 'You don’t have permission to upload or create files here');
 			OC.Notification.show(message, {type: 'error'});
 		},
 
@@ -2795,6 +2957,7 @@
 					var isCreatable = (self.getDirectoryPermissions() & OC.PERMISSION_CREATE) !== 0;
 					if (!isCreatable) {
 						self._showPermissionDeniedNotification();
+						e.stopPropagation();
 						return false;
 					}
 

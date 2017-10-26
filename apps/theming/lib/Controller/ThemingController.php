@@ -73,6 +73,8 @@ class ThemingController extends Controller {
 	private $appData;
 	/** @var SCSSCacher */
 	private $scssCacher;
+	/** @var IURLGenerator */
+	private $urlGenerator;
 
 	/**
 	 * ThemingController constructor.
@@ -87,6 +89,7 @@ class ThemingController extends Controller {
 	 * @param ITempManager $tempManager
 	 * @param IAppData $appData
 	 * @param SCSSCacher $scssCacher
+	 * @param IURLGenerator $urlGenerator
 	 */
 	public function __construct(
 		$appName,
@@ -98,7 +101,8 @@ class ThemingController extends Controller {
 		IL10N $l,
 		ITempManager $tempManager,
 		IAppData $appData,
-		SCSSCacher $scssCacher
+		SCSSCacher $scssCacher,
+		IURLGenerator $urlGenerator
 	) {
 		parent::__construct($appName, $request);
 
@@ -110,6 +114,7 @@ class ThemingController extends Controller {
 		$this->tempManager = $tempManager;
 		$this->appData = $appData;
 		$this->scssCacher = $scssCacher;
+		$this->urlGenerator = $urlGenerator;
 	}
 
 	/**
@@ -172,7 +177,8 @@ class ThemingController extends Controller {
 			[
 				'data' =>
 					[
-						'message' => $this->l10n->t('Saved')
+						'message' => $this->l10n->t('Saved'),
+						'serverCssUrl' => $this->urlGenerator->linkTo('', $this->scssCacher->getCachedSCSS('core', '/core/css/server.scss'))
 					],
 				'status' => 'success'
 			]
@@ -201,12 +207,34 @@ class ThemingController extends Controller {
 		}
 		$newLogo = $this->request->getUploadedFile('uploadlogo');
 		$newBackgroundLogo = $this->request->getUploadedFile('upload-login-background');
+		$error = null;
+		$phpFileUploadErrors = [
+			UPLOAD_ERR_OK => $this->l10n->t('There is no error, the file uploaded with success'),
+			UPLOAD_ERR_INI_SIZE => $this->l10n->t('The uploaded file exceeds the upload_max_filesize directive in php.ini'),
+			UPLOAD_ERR_FORM_SIZE => $this->l10n->t('The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form'),
+			UPLOAD_ERR_PARTIAL => $this->l10n->t('The uploaded file was only partially uploaded'),
+			UPLOAD_ERR_NO_FILE => $this->l10n->t('No file was uploaded'),
+			UPLOAD_ERR_NO_TMP_DIR => $this->l10n->t('Missing a temporary folder'),
+			UPLOAD_ERR_CANT_WRITE => $this->l10n->t('Failed to write file to disk.'),
+			UPLOAD_ERR_EXTENSION => $this->l10n->t('A PHP extension stopped the file upload.'),
+		];
 		if (empty($newLogo) && empty($newBackgroundLogo)) {
+			$error = $this->l10n->t('No file uploaded');
+		}
+		if (!empty($newLogo) && array_key_exists('error', $newLogo) && $newLogo['error'] !== UPLOAD_ERR_OK) {
+			$error = $phpFileUploadErrors[$newLogo['error']];
+		}
+		if (!empty($newBackgroundLogo) && array_key_exists('error', $newBackgroundLogo) && $newBackgroundLogo['error'] !== UPLOAD_ERR_OK) {
+			$error = $phpFileUploadErrors[$newBackgroundLogo['error']];
+		}
+
+		if ($error !== null) {
 			return new DataResponse(
 				[
 					'data' => [
-						'message' => $this->l10n->t('No file uploaded')
-					]
+						'message' => $error
+					],
+					'status' => 'failure',
 				],
 				Http::STATUS_UNPROCESSABLE_ENTITY
 			);
@@ -221,6 +249,18 @@ class ThemingController extends Controller {
 
 		if (!empty($newLogo)) {
 			$target = $folder->newFile('logo');
+			$supportedFormats = ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml', 'text/svg'];
+			if (!in_array($newLogo['type'], $supportedFormats)) {
+				return new DataResponse(
+					[
+						'data' => [
+							'message' => $this->l10n->t('Unsupported image type'),
+						],
+						'status' => 'failure',
+					],
+					Http::STATUS_UNPROCESSABLE_ENTITY
+				);
+			}
 			$target->putContent(file_get_contents($newLogo['tmp_name'], 'r'));
 			$this->themingDefaults->set('logoMime', $newLogo['type']);
 			$name = $newLogo['name'];
@@ -303,7 +343,8 @@ class ThemingController extends Controller {
 				'data' =>
 					[
 						'value' => $value,
-						'message' => $this->l10n->t('Saved')
+						'message' => $this->l10n->t('Saved'),
+						'serverCssUrl' => $this->urlGenerator->linkTo('', $this->scssCacher->getCachedSCSS('core', '/core/css/server.scss'))
 					],
 				'status' => 'success'
 			]
@@ -411,6 +452,41 @@ class ThemingController extends Controller {
 	};
 })();';
 		$response = new DataDownloadResponse($responseJS, 'javascript', 'text/javascript');
+		$response->addHeader('Expires', date(\DateTime::RFC2822, $this->timeFactory->getTime()));
+		$response->addHeader('Pragma', 'cache');
+		$response->cacheFor(3600);
+		return $response;
+	}
+
+	/**
+	 * @NoCSRFRequired
+	 * @PublicPage
+	 *
+	 * @return Http\JSONResponse
+	 */
+	public function getManifest($app) {
+		$cacheBusterValue = $this->config->getAppValue('theming', 'cachebuster', '0');
+		$responseJS = [
+			'name' => $this->themingDefaults->getName(),
+			'start_url' => $this->urlGenerator->getBaseUrl(),
+			'icons' =>
+				[
+					[
+						'src' => $this->urlGenerator->linkToRoute('theming.Icon.getTouchIcon',
+								['app' => $app]) . '?v=' . $cacheBusterValue,
+						'type'=> 'image/png',
+						'sizes'=> '128x128'
+					],
+					[
+						'src' => $this->urlGenerator->linkToRoute('theming.Icon.getFavicon',
+								['app' => $app]) . '?v=' . $cacheBusterValue,
+						'type' => 'image/svg+xml',
+						'sizes' => '16x16'
+					]
+				],
+			'display' => 'standalone'
+		];
+		$response = new Http\JSONResponse($responseJS);
 		$response->addHeader('Expires', date(\DateTime::RFC2822, $this->timeFactory->getTime()));
 		$response->addHeader('Pragma', 'cache');
 		$response->cacheFor(3600);

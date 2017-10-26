@@ -31,6 +31,7 @@
 namespace OC;
 
 use OC\App\AppStore\Bundles\BundleFetcher;
+use OC\Files\AppData\Factory;
 use OC\Repair\CleanTags;
 use OC\Repair\Collation;
 use OC\Repair\MoveUpdaterStepFile;
@@ -39,7 +40,10 @@ use OC\Repair\NC11\FixMountStorages;
 use OC\Repair\NC11\MoveAvatars;
 use OC\Repair\NC12\InstallCoreBundle;
 use OC\Repair\NC12\UpdateLanguageCodes;
+use OC\Repair\NC12\RepairIdentityProofKeyFolders;
+use OC\Repair\NC13\AddLogRotateJob;
 use OC\Repair\OldGroupMembershipShares;
+use OC\Repair\Owncloud\DropAccountTermsTable;
 use OC\Repair\Owncloud\SaveAccountsTableData;
 use OC\Repair\RemoveRootShares;
 use OC\Repair\NC13\RepairInvalidPaths;
@@ -145,7 +149,9 @@ class Repair implements IOutput{
 				\OC::$server->getConfig(),
 				\OC::$server->query(Installer::class)
 			),
-			new RepairInvalidPaths(\OC::$server->getDatabaseConnection(), \OC::$server->getConfig())
+			new RepairInvalidPaths(\OC::$server->getDatabaseConnection(), \OC::$server->getConfig()),
+			new RepairIdentityProofKeyFolders(\OC::$server->getConfig(), \OC::$server->query(Factory::class), \OC::$server->getRootFolder()),
+			new AddLogRotateJob(\OC::$server->getJobList()),
 		];
 	}
 
@@ -174,6 +180,7 @@ class Repair implements IOutput{
 			new Collation(\OC::$server->getConfig(), \OC::$server->getLogger(), $connection, true),
 			new SqliteAutoincrement($connection),
 			new SaveAccountsTableData($connection, $config),
+			new DropAccountTermsTable($connection),
 		];
 
 		return $steps;

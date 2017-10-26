@@ -42,9 +42,11 @@ OC.L10N.register(
     "Contact birthdays" : "Aniversário dos contatos",
     "Personal" : "Pessoal",
     "Contacts" : "Contatos",
-    "WebDAV" : "WebDAV",
     "Technical details" : "Detalhes técnicos",
     "Remote Address: %s" : "Endereço remoto: %s",
-    "Request ID: %s" : "ID do solicitante: %s"
+    "Request ID: %s" : "ID do solicitante: %s",
+    "CalDAV server" : "Servidor CalDAV",
+    "Send invitations to attendees" : "Envie convites aos participantes",
+    "Please make sure to properly set up the email settings above." : "Certifique-se de configurar corretamente o email acima."
 },
 "nplurals=2; plural=(n > 1);");

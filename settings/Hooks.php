@@ -117,7 +117,13 @@ class Hooks {
 		$this->activityManager->publish($event);
 
 		if ($user->getEMailAddress() !== null) {
-			$template = $this->mailer->createEMailTemplate();
+			$template = $this->mailer->createEMailTemplate('settings.PasswordChanged', [
+				'displayname' => $user->getDisplayName(),
+				'emailAddress' => $user->getEMailAddress(),
+				'instanceUrl' => $instanceUrl,
+			]);
+
+			$template->setSubject($this->l->t('Password for %1$s changed on %2$s', [$user->getDisplayName(), $instanceUrl]));
 			$template->addHeader();
 			$template->addHeading($this->l->t('Password changed for %s', [$user->getDisplayName()]), false);
 			$template->addBodyText($text . ' ' . $this->l->t('If you did not request this, please contact an administrator.'));
@@ -126,10 +132,7 @@ class Hooks {
 
 			$message = $this->mailer->createMessage();
 			$message->setTo([$user->getEMailAddress() => $user->getDisplayName()]);
-			$message->setSubject($this->l->t('Password for %1$s changed on %2$s', [$user->getDisplayName(), $instanceUrl]));
-			$message->setBody($template->renderText(), 'text/plain');
-			$message->setHtmlBody($template->renderHtml());
-
+			$message->useTemplate($template);
 			$this->mailer->send($message);
 		}
 	}
@@ -183,7 +186,14 @@ class Hooks {
 
 
 		if ($oldMailAddress !== null) {
-			$template = $this->mailer->createEMailTemplate();
+			$template = $this->mailer->createEMailTemplate('settings.EmailChanged', [
+				'displayname' => $user->getDisplayName(),
+				'newEMailAddress' => $user->getEMailAddress(),
+				'oldEMailAddress' => $oldMailAddress,
+				'instanceUrl' => $instanceUrl,
+			]);
+
+			$template->setSubject($this->l->t('Email address for %1$s changed on %2$s', [$user->getDisplayName(), $instanceUrl]));
 			$template->addHeader();
 			$template->addHeading($this->l->t('Email address changed for %s', [$user->getDisplayName()]), false);
 			$template->addBodyText($text . ' ' . $this->l->t('If you did not request this, please contact an administrator.'));
@@ -195,10 +205,7 @@ class Hooks {
 
 			$message = $this->mailer->createMessage();
 			$message->setTo([$oldMailAddress => $user->getDisplayName()]);
-			$message->setSubject($this->l->t('Email address for %1$s changed on %2$s', [$user->getDisplayName(), $instanceUrl]));
-			$message->setBody($template->renderText(), 'text/plain');
-			$message->setHtmlBody($template->renderHtml());
-
+			$message->useTemplate($template);
 			$this->mailer->send($message);
 		}
 	}

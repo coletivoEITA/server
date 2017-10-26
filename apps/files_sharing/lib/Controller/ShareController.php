@@ -372,9 +372,14 @@ class ShareController extends Controller {
 		$shareTmpl['previewMaxX'] = $this->config->getSystemValue('preview_max_x', 1024);
 		$shareTmpl['previewMaxY'] = $this->config->getSystemValue('preview_max_y', 1024);
 		$shareTmpl['disclaimer'] = $this->config->getAppValue('core', 'shareapi_public_link_disclaimertext', null);
+		$shareTmpl['previewURL'] = $shareTmpl['downloadURL'];
 		if ($shareTmpl['previewSupported']) {
 			$shareTmpl['previewImage'] = $this->urlGenerator->linkToRouteAbsolute( 'files_sharing.PublicPreview.getPreview',
 				['x' => 200, 'y' => 200, 'file' => $shareTmpl['directory_path'], 't' => $shareTmpl['dirToken']]);
+			// We just have direct previews for image files
+			if ($share->getNode()->getMimePart() === 'image') {
+				$shareTmpl['previewURL'] = $this->urlGenerator->linkToRouteAbsolute('files_sharing.publicpreview.directLink', ['token' => $token]);
+			}
 		} else {
 			$shareTmpl['previewImage'] = $this->urlGenerator->getAbsoluteURL($this->urlGenerator->imagePath('core', 'favicon-fb.png'));
 		}
@@ -401,8 +406,8 @@ class ShareController extends Controller {
 		}
 
 		// OpenGraph Support: http://ogp.me/
-		\OCP\Util::addHeader('meta', ['property' => "og:title", 'content' => $this->defaults->getName() . ($this->defaults->getSlogan() !== '' ? ' - ' . $this->defaults->getSlogan() : '')]);
-		\OCP\Util::addHeader('meta', ['property' => "og:description", 'content' => $this->l10n->t('%s is publicly shared', [$shareTmpl['filename']])]);
+		\OCP\Util::addHeader('meta', ['property' => "og:title", 'content' => $shareTmpl['filename']]);
+		\OCP\Util::addHeader('meta', ['property' => "og:description", 'content' => $this->defaults->getName() . ($this->defaults->getSlogan() !== '' ? ' - ' . $this->defaults->getSlogan() : '')]);
 		\OCP\Util::addHeader('meta', ['property' => "og:site_name", 'content' => $this->defaults->getName()]);
 		\OCP\Util::addHeader('meta', ['property' => "og:url", 'content' => $shareTmpl['shareUrl']]);
 		\OCP\Util::addHeader('meta', ['property' => "og:type", 'content' => "object"]);

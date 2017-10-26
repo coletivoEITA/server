@@ -39,6 +39,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  *
  */
+
 namespace OC;
 
 use bantu\IniGetWrapper\IniGetWrapper;
@@ -51,11 +52,13 @@ use OC\AppFramework\Http\Request;
 use OC\AppFramework\Utility\SimpleContainer;
 use OC\AppFramework\Utility\TimeFactory;
 use OC\Authentication\LoginCredentials\Store;
-use OC\Command\AsyncBus;
+use OC\Collaboration\Collaborators\GroupPlugin;
+use OC\Collaboration\Collaborators\MailPlugin;
+use OC\Collaboration\Collaborators\RemotePlugin;
+use OC\Collaboration\Collaborators\UserPlugin;
+use OC\Command\CronBus;
 use OC\Contacts\ContactsMenu\ActionFactory;
 use OC\Diagnostics\EventLogger;
-use OC\Diagnostics\NullEventLogger;
-use OC\Diagnostics\NullQueryLogger;
 use OC\Diagnostics\QueryLogger;
 use OC\Federation\CloudIdManager;
 use OC\Files\Config\UserMountCache;
@@ -102,6 +105,7 @@ use OC\Template\SCSSCacher;
 use OCA\Theming\ThemingDefaults;
 
 use OCP\App\IAppManager;
+use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Defaults;
 use OCA\Theming\Util;
 use OCP\Federation\ICloudIdManager;
@@ -112,10 +116,10 @@ use OCP\IL10N;
 use OCP\IServerContainer;
 use OCP\ITempManager;
 use OCP\Contacts\ContactsMenu\IActionFactory;
-use OCP\IURLGenerator;
 use OCP\Lock\ILockingProvider;
 use OCP\RichObjectStrings\IValidator;
 use OCP\Security\IContentSecurityPolicyManager;
+use OCP\Share;
 use OCP\Share\IShareHelper;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -139,7 +143,7 @@ class Server extends ServerContainer implements IServerContainer {
 		parent::__construct();
 		$this->webRoot = $webRoot;
 
-		$this->registerService(\OCP\IServerContainer::class, function(IServerContainer $c) {
+		$this->registerService(\OCP\IServerContainer::class, function (IServerContainer $c) {
 			return $c;
 		});
 
@@ -147,7 +151,6 @@ class Server extends ServerContainer implements IServerContainer {
 		$this->registerAlias('ContactsManager', \OCP\Contacts\IManager::class);
 
 		$this->registerAlias(IActionFactory::class, ActionFactory::class);
-
 
 
 		$this->registerService(\OCP\IPreview::class, function (Server $c) {
@@ -256,8 +259,8 @@ class Server extends ServerContainer implements IServerContainer {
 		});
 		$this->registerAlias('SystemTagObjectMapper', \OCP\SystemTag\ISystemTagObjectMapper::class);
 
-		$this->registerService(\OCP\Files\IRootFolder::class, function(Server $c) {
-			return new LazyRoot(function() use ($c) {
+		$this->registerService(\OCP\Files\IRootFolder::class, function (Server $c) {
+			return new LazyRoot(function () use ($c) {
 				return $c->query('RootFolder');
 			});
 		});
@@ -295,7 +298,7 @@ class Server extends ServerContainer implements IServerContainer {
 		});
 		$this->registerAlias('GroupManager', \OCP\IGroupManager::class);
 
-		$this->registerService(Store::class, function(Server $c) {
+		$this->registerService(Store::class, function (Server $c) {
 			$session = $c->getSession();
 			if (\OC::$server->getSystemConfig()->getValue('installed', false)) {
 				$tokenProvider = $c->query('OC\Authentication\Token\IProvider');
@@ -379,7 +382,15 @@ class Server extends ServerContainer implements IServerContainer {
 		$this->registerAlias('UserSession', \OCP\IUserSession::class);
 
 		$this->registerService(\OC\Authentication\TwoFactorAuth\Manager::class, function (Server $c) {
-			return new \OC\Authentication\TwoFactorAuth\Manager($c->getAppManager(), $c->getSession(), $c->getConfig(), $c->getActivityManager(), $c->getLogger());
+			return new \OC\Authentication\TwoFactorAuth\Manager(
+				$c->getAppManager(),
+				$c->getSession(),
+				$c->getConfig(),
+				$c->getActivityManager(),
+				$c->getLogger(),
+				$c->query(\OC\Authentication\Token\IProvider::class),
+				$c->query(ITimeFactory::class)
+			);
 		});
 
 		$this->registerAlias(\OCP\INavigationManager::class, \OC\NavigationManager::class);
@@ -521,8 +532,8 @@ class Server extends ServerContainer implements IServerContainer {
 		$this->registerService(\OCP\Route\IRouter::class, function (Server $c) {
 			$cacheFactory = $c->getMemCacheFactory();
 			$logger = $c->getLogger();
-			if ($cacheFactory->isAvailable()) {
-				$router = new \OC\Route\CachingRouter($cacheFactory->create('route'), $logger);
+			if ($cacheFactory->isAvailableLowLatency()) {
+				$router = new \OC\Route\CachingRouter($cacheFactory->createLocal('route'), $logger);
 			} else {
 				$router = new \OC\Route\Router($logger);
 			}
@@ -535,7 +546,7 @@ class Server extends ServerContainer implements IServerContainer {
 		});
 		$this->registerAlias('Search', \OCP\ISearch::class);
 
-		$this->registerService(\OC\Security\RateLimiting\Limiter::class, function($c) {
+		$this->registerService(\OC\Security\RateLimiting\Limiter::class, function ($c) {
 			return new \OC\Security\RateLimiting\Limiter(
 				$this->getUserSession(),
 				$this->getRequest(),
@@ -543,7 +554,7 @@ class Server extends ServerContainer implements IServerContainer {
 				$c->query(\OC\Security\RateLimiting\Backend\IBackend::class)
 			);
 		});
-		$this->registerService(\OC\Security\RateLimiting\Backend\IBackend::class, function($c) {
+		$this->registerService(\OC\Security\RateLimiting\Backend\IBackend::class, function ($c) {
 			return new \OC\Security\RateLimiting\Backend\MemoryCache(
 				$this->getMemCacheFactory(),
 				new \OC\AppFramework\Utility\TimeFactory()
@@ -677,7 +688,7 @@ class Server extends ServerContainer implements IServerContainer {
 		$this->registerService(\OCP\Files\Config\IMountProviderCollection::class, function (Server $c) {
 			$loader = \OC\Files\Filesystem::getLoader();
 			$mountCache = $c->query('UserMountCache');
-			$manager =  new \OC\Files\Config\MountProviderCollection($loader, $mountCache);
+			$manager = new \OC\Files\Config\MountProviderCollection($loader, $mountCache);
 
 			// builtin providers
 
@@ -694,13 +705,24 @@ class Server extends ServerContainer implements IServerContainer {
 			return new IniGetWrapper();
 		});
 		$this->registerService('AsyncCommandBus', function (Server $c) {
-			$jobList = $c->getJobList();
-			return new AsyncBus($jobList);
+			$busClass = $c->getConfig()->getSystemValue('commandbus');
+			if ($busClass) {
+				list($app, $class) = explode('::', $busClass, 2);
+				if ($c->getAppManager()->isInstalled($app)) {
+					\OC_App::loadApp($app);
+					return $c->query($class);
+				} else {
+					throw new ServiceUnavailableException("The app providing the command bus ($app) is not enabled");
+				}
+			} else {
+				$jobList = $c->getJobList();
+				return new CronBus($jobList);
+			}
 		});
 		$this->registerService('TrustedDomainHelper', function ($c) {
 			return new TrustedDomainHelper($this->getConfig());
 		});
-		$this->registerService('Throttler', function(Server $c) {
+		$this->registerService('Throttler', function (Server $c) {
 			return new Throttler(
 				$c->getDatabaseConnection(),
 				new TimeFactory(),
@@ -711,7 +733,7 @@ class Server extends ServerContainer implements IServerContainer {
 		$this->registerService('IntegrityCodeChecker', function (Server $c) {
 			// IConfig and IAppManager requires a working database. This code
 			// might however be called when ownCloud is not yet setup.
-			if(\OC::$server->getSystemConfig()->getValue('installed', false)) {
+			if (\OC::$server->getSystemConfig()->getValue('installed', false)) {
 				$config = $c->getConfig();
 				$appManager = $c->getAppManager();
 			} else {
@@ -720,13 +742,13 @@ class Server extends ServerContainer implements IServerContainer {
 			}
 
 			return new Checker(
-					new EnvironmentHelper(),
-					new FileAccessHelper(),
-					new AppLocator(),
-					$config,
-					$c->getMemCacheFactory(),
-					$appManager,
-					$c->getTempManager()
+				new EnvironmentHelper(),
+				new FileAccessHelper(),
+				new AppLocator(),
+				$config,
+				$c->getMemCacheFactory(),
+				$appManager,
+				$c->getTempManager()
 			);
 		});
 		$this->registerService(\OCP\IRequest::class, function ($c) {
@@ -776,10 +798,10 @@ class Server extends ServerContainer implements IServerContainer {
 		});
 		$this->registerAlias('Mailer', \OCP\Mail\IMailer::class);
 
-		$this->registerService('LDAPProvider', function(Server $c) {
+		$this->registerService('LDAPProvider', function (Server $c) {
 			$config = $c->getConfig();
 			$factoryClass = $config->getSystemValue('ldapProviderFactory', null);
-			if(is_null($factoryClass)) {
+			if (is_null($factoryClass)) {
 				throw new \Exception('ldapProviderFactory not set');
 			}
 			/** @var \OCP\LDAP\ILDAPProviderFactory $factory */
@@ -845,7 +867,7 @@ class Server extends ServerContainer implements IServerContainer {
 		});
 		$this->registerAlias('CapabilitiesManager', \OC\CapabilitiesManager::class);
 
-		$this->registerService(\OCP\Comments\ICommentsManager::class, function(Server $c) {
+		$this->registerService(\OCP\Comments\ICommentsManager::class, function (Server $c) {
 			$config = $c->getConfig();
 			$factoryClass = $config->getSystemValue('comments.managerFactory', '\OC\Comments\ManagerFactory');
 			/** @var \OCP\Comments\ICommentsManagerFactory $factory */
@@ -854,7 +876,7 @@ class Server extends ServerContainer implements IServerContainer {
 		});
 		$this->registerAlias('CommentsManager', \OCP\Comments\ICommentsManager::class);
 
-		$this->registerService('ThemingDefaults', function(Server $c) {
+		$this->registerService('ThemingDefaults', function (Server $c) {
 			/*
 			 * Dark magic for autoloader.
 			 * If we do a class_exists it will try to load the class which will
@@ -875,12 +897,13 @@ class Server extends ServerContainer implements IServerContainer {
 					$c->getURLGenerator(),
 					$c->getAppDataDir('theming'),
 					$c->getMemCacheFactory(),
-					new Util($c->getConfig(), $this->getAppManager(), $this->getAppDataDir('theming'))
+					new Util($c->getConfig(), $this->getAppManager(), $this->getAppDataDir('theming')),
+					$this->getAppManager()
 				);
 			}
 			return new \OC_Defaults();
 		});
-		$this->registerService(SCSSCacher::class, function(Server $c) {
+		$this->registerService(SCSSCacher::class, function (Server $c) {
 			/** @var Factory $cacheFactory */
 			$cacheFactory = $c->query(Factory::class);
 			return new SCSSCacher(
@@ -940,14 +963,14 @@ class Server extends ServerContainer implements IServerContainer {
 		});
 		$this->registerAlias('ContentSecurityPolicyManager', \OCP\Security\IContentSecurityPolicyManager::class);
 
-		$this->registerService('ContentSecurityPolicyNonceManager', function(Server $c) {
+		$this->registerService('ContentSecurityPolicyNonceManager', function (Server $c) {
 			return new ContentSecurityPolicyNonceManager(
 				$c->getCsrfTokenManager(),
 				$c->getRequest()
 			);
 		});
 
-		$this->registerService(\OCP\Share\IManager::class, function(Server $c) {
+		$this->registerService(\OCP\Share\IManager::class, function (Server $c) {
 			$config = $c->getConfig();
 			$factoryClass = $config->getSystemValue('sharing.managerFactory', '\OC\Share20\ProviderFactory');
 			/** @var \OCP\Share\IProviderFactory $factory */
@@ -960,7 +983,8 @@ class Server extends ServerContainer implements IServerContainer {
 				$c->getHasher(),
 				$c->getMountManager(),
 				$c->getGroupManager(),
-				$c->getL10N('core'),
+				$c->getL10N('lib'),
+				$c->getL10NFactory(),
 				$factory,
 				$c->getUserManager(),
 				$c->getLazyRootFolder(),
@@ -974,7 +998,20 @@ class Server extends ServerContainer implements IServerContainer {
 		});
 		$this->registerAlias('ShareManager', \OCP\Share\IManager::class);
 
-		$this->registerService('SettingsManager', function(Server $c) {
+		$this->registerService(\OCP\Collaboration\Collaborators\ISearch::class, function(Server $c) {
+			$instance = new Collaboration\Collaborators\Search($c);
+
+			// register default plugins
+			$instance->registerPlugin(['shareType' => 'SHARE_TYPE_USER', 'class' => UserPlugin::class]);
+			$instance->registerPlugin(['shareType' => 'SHARE_TYPE_GROUP', 'class' => GroupPlugin::class]);
+			$instance->registerPlugin(['shareType' => 'SHARE_TYPE_EMAIL', 'class' => MailPlugin::class]);
+			$instance->registerPlugin(['shareType' => 'SHARE_TYPE_REMOTE', 'class' => RemotePlugin::class]);
+
+			return $instance;
+		});
+		$this->registerAlias('CollaboratorSearch', \OCP\Collaboration\Collaborators\ISearch::class);
+
+		$this->registerService('SettingsManager', function (Server $c) {
 			$manager = new \OC\Settings\Manager(
 				$c->getLogger(),
 				$c->getDatabaseConnection(),
@@ -1002,7 +1039,7 @@ class Server extends ServerContainer implements IServerContainer {
 		});
 
 		$this->registerService('LockdownManager', function (Server $c) {
-			return new LockdownManager(function() use ($c) {
+			return new LockdownManager(function () use ($c) {
 				return $c->getSession();
 			});
 		});
@@ -1038,11 +1075,11 @@ class Server extends ServerContainer implements IServerContainer {
 		});
 		$this->registerAlias('Defaults', \OCP\Defaults::class);
 
-		$this->registerService(\OCP\ISession::class, function(SimpleContainer $c) {
+		$this->registerService(\OCP\ISession::class, function (SimpleContainer $c) {
 			return $c->query(\OCP\IUserSession::class)->getSession();
 		});
 
-		$this->registerService(IShareHelper::class, function(Server $c) {
+		$this->registerService(IShareHelper::class, function (Server $c) {
 			return new ShareHelper(
 				$c->query(\OCP\Share\IManager::class)
 			);
@@ -1755,6 +1792,13 @@ class Server extends ServerContainer implements IServerContainer {
 	 */
 	public function getShareManager() {
 		return $this->query('ShareManager');
+	}
+
+	/**
+	 * @return \OCP\Collaboration\Collaborators\ISearch
+	 */
+	public function getCollaboratorSearch() {
+		return $this->query('CollaboratorSearch');
 	}
 
 	/**

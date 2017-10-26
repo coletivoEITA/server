@@ -432,7 +432,7 @@ class Request implements \ArrayAccess, \Countable, IRequest {
 		// 'application/json' must be decoded manually.
 		if (strpos($this->getHeader('Content-Type'), 'application/json') !== false) {
 			$params = json_decode(file_get_contents($this->inputStream), true);
-			if(count($params) > 0) {
+			if($params !== null && count($params) > 0) {
 				$this->items['params'] = $params;
 				if($this->method === 'POST') {
 					$this->items['post'] = $params;
@@ -507,7 +507,7 @@ class Request implements \ArrayAccess, \Countable, IRequest {
 	 *
 	 * @return array
 	 */
-	protected function getCookieParams() {
+	public function getCookieParams() {
 		return session_get_cookie_params();
 	}
 

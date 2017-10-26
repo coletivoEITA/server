@@ -24,10 +24,6 @@ table td.date {
 table td {
 	padding: 0;
 }
-/* and accordingly fix left margin of file list summary on mobile */
-.summary .info {
-	margin-left: 105px;
-}
 
 /* remove shift for multiselect bar to account for missing navigation */
 table.multiselect thead {
@@ -47,21 +43,19 @@ table td.filename .nametext {
 	margin-right: 6px;
 }
 /* hide text of the share action on mobile */
-#fileList a.action-share span {
-	display: none;
+#fileList a.action-share span:not(.icon) {
+	display: none !important;
 }
 #fileList a.action.action-favorite {
-	-ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=70)" !important;
 	opacity: .7 !important;
 }
 #fileList a.action.action-favorite {
-	-ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=30)" !important;
 	opacity: .3 !important;
 }
 
 /* ellipsis on file names */
 table td.filename .nametext .innernametext {
-	max-width: calc(100% - 175px);
+	max-width: calc(100% - 175px) !important;
 }
 
 /* proper notification area for multi line messages */

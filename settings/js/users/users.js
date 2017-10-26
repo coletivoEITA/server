@@ -571,7 +571,12 @@ var UserList = {
 			//asymptotic curve approaching 50% at 10GB to visualize used stace with infinite quota
 			usedQuota = 95 * (1 - (1 / (usedInGB + 1)));
 		}
-		$tr.find('.quota_progress').width(usedQuota + '%');
+		$tr.find('.quota-user-progress').val( isNaN(usedQuota) ? 0 : usedQuota );
+		if (usedQuota > 80) {
+			$tr.find('.quota-user-progress').addClass('warn');
+		} else {
+			$tr.find('.quota-user-progress').removeClass('warn');
+		}
 	},
 
 	/**
@@ -587,7 +592,7 @@ var UserList = {
 		if (quota === 'other') {
 			return;
 		}
-		if ((quota !== 'default' && quota !== "none") && (!OC.Util.computerFileSize(quota))) {
+		if (quota !== 'default' && quota !== "none" && OC.Util.computerFileSize(quota) === null) {
 			// the select component has added the bogus value, delete it again
 			$select.find('option[selected]').remove();
 			OC.Notification.showTemporary(t('core', 'Invalid quota value "{val}"', {val: quota}));
@@ -950,9 +955,12 @@ $(document).ready(function () {
 
 		if ($tr.is('.active')) {
 			$tr.removeClass('active');
+			menudiv.removeClass('open');
 			return;
 		}
 		$('#userlist tr.active').removeClass('active');
+		$('#userlist .popovermenu').removeClass('open');
+		menudiv.addClass('open');
 		menudiv.find('.action-togglestate').empty();
 		if ($tr.data('userEnabled')) {
 			$('.action-togglestate', $td).html('<span class="icon icon-close"></span><span>' + t('settings', 'Disable') + '</span>');

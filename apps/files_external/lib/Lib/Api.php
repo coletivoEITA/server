@@ -39,7 +39,7 @@ class Api {
 	private static function formatMount($mountPoint, $mountConfig) {
 		// strip "/$user/files" from mount point
 		$mountPoint = explode('/', trim($mountPoint, '/'), 3);
-		$mountPoint = $mountPoint[2];
+		$mountPoint = isset($mountPoint[2]) ? $mountPoint[2] : '';
 
 		// split path from mount point
 		$path = dirname($mountPoint);
@@ -72,7 +72,7 @@ class Api {
 	 * Returns the mount points visible for this user.
 	 *
 	 * @param array $params
-	 * @return \OC_OCS_Result share information
+	 * @return \OC\OCS\Result share information
 	 */
 	public static function getUserMounts($params) {
 		$entries = array();
@@ -83,6 +83,6 @@ class Api {
 			$entries[] = self::formatMount($mountPoint, $mount);
 		}
 
-		return new \OC_OCS_Result($entries);
+		return new \OC\OCS\Result($entries);
 	}
 }

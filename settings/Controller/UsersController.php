@@ -45,6 +45,7 @@ use OCP\Files\Config\IUserMountCache;
 use OCP\Encryption\IEncryptionModule;
 use OCP\Encryption\IManager;
 use OCP\IConfig;
+use OCP\IGroupManager;
 use OCP\IL10N;
 use OCP\ILogger;
 use OCP\IRequest;
@@ -70,7 +71,7 @@ class UsersController extends Controller {
 	private $isAdmin;
 	/** @var IUserManager */
 	private $userManager;
-	/** @var \OC\Group\Manager */
+	/** @var IGroupManager */
 	private $groupManager;
 	/** @var IConfig */
 	private $config;
@@ -112,7 +113,7 @@ class UsersController extends Controller {
 	 * @param string $appName
 	 * @param IRequest $request
 	 * @param IUserManager $userManager
-	 * @param \OC\Group\Manager $groupManager
+	 * @param IGroupManager $groupManager
 	 * @param IUserSession $userSession
 	 * @param IConfig $config
 	 * @param bool $isAdmin
@@ -135,7 +136,7 @@ class UsersController extends Controller {
 	public function __construct($appName,
 								IRequest $request,
 								IUserManager $userManager,
-								\OC\Group\Manager $groupManager,
+								IGroupManager $groupManager,
 								IUserSession $userSession,
 								IConfig $config,
 								$isAdmin,
@@ -436,7 +437,9 @@ class UsersController extends Controller {
 				);
 			}
 
-			$password = $this->secureRandom->generate(32);
+			$password = $this->secureRandom->generate(30);
+			// Make sure we pass the password_policy
+			$password .= $this->secureRandom->generate(2, '$!.,;:-~+*[]{}()');
 			$generatePasswordResetToken = true;
 		}
 

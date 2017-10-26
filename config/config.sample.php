@@ -739,13 +739,6 @@ $CONFIG = array(
 'log_query' => false,
 
 /**
- * Log successful cron runs.
- *
- * Defaults to ``true``
- */
-'cron_log' => true,
-
-/**
  * Enables log rotation and limits the total size of logfiles. The default is 0,
  * or no rotation. Specify a size in bytes, for example 104857600 (100 megabytes
  * = 100 * 1024 * 1024 bytes). A new logfile is created with a new name when the
@@ -948,6 +941,13 @@ $CONFIG = array(
  * Defaults to ``51`` minutes
  */
 'ldapUserCleanupInterval' => 51,
+
+/**
+ * Sort groups in the user settings by name instead of the user count
+ *
+ * By enabling this the user count beside the group name is disabled as well.
+ */
+'sort_groups_by_name' => false,
 
 /**
  * Comments

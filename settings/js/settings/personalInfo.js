@@ -41,8 +41,9 @@ jQuery.fn.keyUpDelayedOrEnter = function (callback, allowEmptyValue) {
 };
 
 function updateAvatar (hidedefault) {
-	var $headerdiv = $('#header .avatardiv');
-	var $displaydiv = $('#displayavatar .avatardiv');
+	var $headerdiv = $('#header .avatardiv'),
+		$displaydiv = $('#displayavatar .avatardiv'),
+		user = OC.getCurrentUser();
 
 	//Bump avatar avatarversion
 	oc_userconfig.avatar.version = -(Math.floor(Math.random() * 1000));
@@ -52,11 +53,11 @@ function updateAvatar (hidedefault) {
 		$('#header .avatardiv').removeClass('avatardiv-shown');
 	} else {
 		$headerdiv.css({'background-color': ''});
-		$headerdiv.avatar(OC.currentUser, 32, true);
+		$headerdiv.avatar(user.uid, 32, true, false, undefined, user.displayName);
 		$('#header .avatardiv').addClass('avatardiv-shown');
 	}
 	$displaydiv.css({'background-color': ''});
-	$displaydiv.avatar(OC.currentUser, 145, true, null, function() {
+	$displaydiv.avatar(user.uid, 145, true, null, function() {
 		$displaydiv.removeClass('loading');
 		$('#displayavatar img').show();
 		if($('#displayavatar img').length === 0) {
@@ -64,7 +65,7 @@ function updateAvatar (hidedefault) {
 		} else {
 			$('#removeavatar').removeClass('hidden').addClass('inlineblock');
 		}
-	});
+	}, user.displayName);
 }
 
 function showAvatarCropper () {
@@ -127,6 +128,7 @@ function avatarResponseHandler (data) {
 	var $warning = $('#avatarform .warning');
 	$warning.hide();
 	if (data.status === "success") {
+		$('#displayavatar .avatardiv').removeClass('icon-loading');
 		updateAvatar();
 	} else if (data.data === "notsquare") {
 		showAvatarCropper();
@@ -179,7 +181,7 @@ $(document).ready(function () {
 						{
 							'status' : 'error',
 							'data' : {
-								'message' : t('core', 'Unable to change password')
+								'message' : t('settings', 'Unable to change password')
 							}
 						}
 					);
@@ -194,7 +196,7 @@ $(document).ready(function () {
 				{
 					'status' : 'error',
 					'data' : {
-						'message' : t('core', 'Unable to change password')
+						'message' : t('settings', 'Unable to change password')
 					}
 				}
 			);
@@ -233,7 +235,7 @@ $(document).ready(function () {
 			).done(function (data) {
 				var dialog = verify.children('.verification-dialog');
 				showVerifyDialog($(dialog), data.msg, data.code);
-				indicator.attr('data-origin-title', t('core', 'Verifying …'));
+				indicator.attr('data-origin-title', t('settings', 'Verifying …'));
 				indicator.attr('src', OC.imagePath('core', 'actions/verifying.svg'));
 				indicator.data('status', '1');
 			});
@@ -301,7 +303,7 @@ $(document).ready(function () {
 		},
 		submit: function(e, data) {
 			$('#displayavatar img').hide();
-			$('#displayavatar .avatardiv').addClass('loading');
+			$('#displayavatar .avatardiv').addClass('icon-loading');
 			data.formData = _.extend(data.formData || {}, {
 				requesttoken: OC.requestToken
 			});
@@ -378,23 +380,24 @@ $(document).ready(function () {
 	$('#pass2').strengthify({
 		zxcvbn: OC.linkTo('core','vendor/zxcvbn/dist/zxcvbn.js'),
 		titles: [
-			t('core', 'Very weak password'),
-			t('core', 'Weak password'),
-			t('core', 'So-so password'),
-			t('core', 'Good password'),
-			t('core', 'Strong password')
+			t('settings', 'Very weak password'),
+			t('settings', 'Weak password'),
+			t('settings', 'So-so password'),
+			t('settings', 'Good password'),
+			t('settings', 'Strong password')
 		],
 		drawTitles: true,
 	});
 
 	// Load the big avatar
-	$('#avatarform .avatardiv').avatar(OC.currentUser, 145, true, null, function() {
+	var user = OC.getCurrentUser();
+	$('#avatarform .avatardiv').avatar(user.uid, 145, true, null, function() {
 		if($('#displayavatar img').length === 0) {
 			$('#removeavatar').removeClass('inlineblock').addClass('hidden');
 		} else {
 			$('#removeavatar').removeClass('hidden').addClass('inlineblock');
 		}
-	});
+	}, user.displayName);
 });
 
 OC.Settings.updateAvatar = updateAvatar;

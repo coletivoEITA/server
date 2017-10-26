@@ -91,6 +91,9 @@ class NavigationManager implements INavigationManager {
 		if(!isset($entry['icon'])) {
 			$entry['icon'] = '';
 		}
+		if(!isset($entry['classes'])) {
+			$entry['classes'] = '';
+		}
 		if(!isset($entry['type'])) {
 			$entry['type'] = 'link';
 		}
@@ -187,18 +190,18 @@ class NavigationManager implements INavigationManager {
 				'icon' => $this->urlGenerator->imagePath('settings', 'admin.svg'),
 			]);
 
-			// Logout
-			$this->add([
-				'type' => 'settings',
-				'id' => 'logout',
-				'order' => 99999,
-				'href' => $this->urlGenerator->linkToRouteAbsolute(
-					'core.login.logout',
-					['requesttoken' => \OCP\Util::callRegister()]
-				),
-				'name' => $l->t('Log out'),
-				'icon' => $this->urlGenerator->imagePath('core', 'actions/logout.svg'),
-			]);
+			$logoutUrl = \OC_User::getLogoutUrl($this->urlGenerator);
+			if($logoutUrl !== '') {
+				// Logout
+				$this->add([
+					'type' => 'settings',
+					'id' => 'logout',
+					'order' => 99999,
+					'href' => $logoutUrl,
+					'name' => $l->t('Log out'),
+					'icon' => $this->urlGenerator->imagePath('core', 'actions/logout.svg'),
+				]);
+			}
 
 			if ($this->isSubadmin()) {
 				// User management

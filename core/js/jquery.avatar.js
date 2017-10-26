@@ -48,6 +48,11 @@
 
 (function ($) {
 	$.fn.avatar = function(user, size, ie8fix, hidedefault, callback, displayname) {
+		var setAvatarForUnknownUser = function(target) {
+			target.imageplaceholder('?');
+			target.css('background-color', '#b9b9b9');
+		};
+
 		if (typeof(user) !== 'undefined') {
 			user = String(user);
 		}
@@ -72,7 +77,7 @@
 			if (typeof(this.data('user')) !== 'undefined') {
 				user = this.data('user');
 			} else {
-				this.imageplaceholder('?');
+				setAvatarForUnknownUser(this);
 				return;
 			}
 		}
@@ -112,8 +117,7 @@
 							$div.imageplaceholder(user, result.data.displayname);
 						} else {
 							// User does not exist
-							$div.imageplaceholder(user, '?');
-							$div.css('background-color', '#b9b9b9');
+							setAvatarForUnknownUser($div);
 						}
 					} else {
 						$div.hide();
@@ -122,9 +126,9 @@
 				} else {
 					$div.show();
 					if (ie8fix === true) {
-						$div.html('<img width="' + size + '" height="' + size + '" src="'+url+'#'+Math.floor(Math.random()*1000)+'">');
+						$div.html('<img width="' + size + '" height="' + size + '" src="'+url+'#'+Math.floor(Math.random()*1000)+'" alt="">');
 					} else {
-						$div.html('<img width="' + size + '" height="' + size + '" src="'+url+'">');
+						$div.html('<img width="' + size + '" height="' + size + '" src="'+url+'" alt="">');
 					}
 				}
 				if(typeof callback === 'function') {
@@ -144,6 +148,7 @@
 				$div.show();
 				$div.text('');
 				$div.append(img);
+				$div.clearimageplaceholder();
 			};
 
 			img.width = size;

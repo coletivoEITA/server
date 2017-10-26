@@ -18,20 +18,6 @@
 	background-position: center;
 	min-width: 16px;
 	min-height: 16px;
-	display: inline-flex;
-	align-self: center;
-	position: relative;
-}
-
-[class^='icon-'] svg,
-[class*=' icon-'] svg {
-	height: 16px;
-	width: 16px;
-	vertical-align: -3px; // counter default DOM offset
-}
-
-.icon-white svg path {
-	fill: $color-primary-text;
 }
 
 .icon-breadcrumb {
@@ -44,8 +30,8 @@
 	&:after {
 		z-index: 2;
 		content: '';
-		height: 30px;
-		width: 30px;
+		height: 28px;
+		width: 28px;
 		margin: -16px 0 0 -16px;
 		position: absolute;
 		top: 50%;
@@ -69,8 +55,8 @@
 
 .icon-loading-small:after,
 .icon-loading-small-dark:after {
-	height: 14px;
-	width: 14px;
+	height: 12px;
+	width: 12px;
 	margin: -8px 0 0 -8px;
 }
 
@@ -459,6 +445,14 @@ img, object, video, button, textarea, input, select {
 	background-image: url('../img/places/calendar-dark.svg?v=1');
 }
 
+.icon-contacts {
+	background-image: url('../img/places/contacts.svg?v=1');
+}
+
+.icon-contacts-dark {
+	background-image: url('../img/places/contacts-dark.svg?v=1');
+}
+
 .icon-files {
 	background-image: url('../img/places/files.svg?v=1');
 }
@@ -493,4 +487,65 @@ img, object, video, button, textarea, input, select {
 
 .icon-picture {
 	background-image: url('../img/places/picture.svg?v=1');
+}
+
+/* APP CATEGORIES ------------------------------------------------------------------- */
+.icon-category-installed {
+	background-image: url('../img/actions/user.svg?v=1');
+}
+
+.icon-category-enabled {
+	background-image: url('../img/actions/checkmark.svg?v=1');
+}
+
+.icon-category-disabled {
+	background-image: url('../img/actions/close.svg?v=1');
+}
+
+.icon-category-app-bundles {
+	background-image: url('../img/categories/bundles.svg?v=1');
+}
+
+.icon-category-updates {
+	background-image: url('../img/actions/download.svg?v=1');
+}
+
+.icon-category-files {
+	background-image: url('../img/categories/files.svg?v=1');
+}
+
+.icon-category-social {
+	background-image: url('../img/categories/social.svg?v=1');
+}
+
+.icon-category-office {
+	background-image: url('../img/categories/office.svg?v=1');
+}
+
+.icon-category-auth {
+	background-image: url('../img/categories/auth.svg?v=1');
+}
+
+.icon-category-monitoring {
+	background-image: url('../img/categories/monitoring.svg?v=1');
+}
+
+.icon-category-multimedia {
+	background-image: url('../img/categories/multimedia.svg?v=1');
+}
+
+.icon-category-organization {
+	background-image: url('../img/categories/organization.svg?v=1');
+}
+
+.icon-category-customization {
+	background-image: url('../img/categories/customization.svg?v=1');
+}
+
+.icon-category-integration {
+	background-image: url('../img/categories/integration.svg?v=1');
+}
+
+.icon-category-tools {
+	background-image: url('../img/actions/settings-dark.svg?v=1');
 }

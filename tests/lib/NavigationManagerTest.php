@@ -72,6 +72,7 @@ class NavigationManagerTest extends TestCase {
 					'icon'	=> 'optional',
 					'href'	=> 'url',
 					'type'	=> 'settings',
+					'classes' => '',
 				],
 				[
 					'id'		=> 'entry id',
@@ -81,6 +82,7 @@ class NavigationManagerTest extends TestCase {
 					'href'		=> 'url',
 					'active'	=> false,
 					'type'		=> 'settings',
+					'classes' => '',
 				],
 			],
 			[
@@ -100,6 +102,7 @@ class NavigationManagerTest extends TestCase {
 					'href'		=> 'url',
 					'active'	=> false,
 					'type'		=> 'link',
+					'classes' => '',
 				],
 			],
 		];
@@ -217,6 +220,16 @@ class NavigationManagerTest extends TestCase {
 		$this->urlGenerator->expects($this->any())->method('linkToRoute')->willReturnCallback(function() {
 			return "/apps/test/";
 		});
+		$this->urlGenerator
+			->expects($this->once())
+			->method('linkToRouteAbsolute')
+			->with(
+				'core.login.logout',
+				[
+					'requesttoken' => \OCP\Util::callRegister(),
+				]
+			)
+			->willReturn('https://example.com/logout');
 		$user = $this->createMock(IUser::class);
 		$user->expects($this->any())->method('getUID')->willReturn('user001');
 		$this->userSession->expects($this->any())->method('getUser')->willReturn($user);
@@ -245,6 +258,7 @@ class NavigationManagerTest extends TestCase {
 				'name' => 'Apps',
 				'active' => false,
 				'type' => 'settings',
+				'classes' => '',
 			]
 		];
 		$defaults = [
@@ -256,15 +270,17 @@ class NavigationManagerTest extends TestCase {
 				'name' => 'Settings',
 				'active' => false,
 				'type' => 'settings',
+				'classes' => '',
 			],
 			[
 				'id' => 'logout',
 				'order' => 99999,
-				'href' => null,
+				'href' => 'https://example.com/logout',
 				'icon' => '/apps/core/img/actions/logout.svg',
 				'name' => 'Log out',
 				'active' => false,
 				'type' => 'settings',
+				'classes' => '',
 			],
 		];
 		return [
@@ -276,6 +292,7 @@ class NavigationManagerTest extends TestCase {
 				'name' => 'Test',
 				'active' => false,
 				'type' => 'link',
+				'classes' => '',
 			]]), ['navigations' => [['route' => 'test.page.index', 'name' => 'Test']]]],
 			'minimalistic-settings' => [array_merge($defaults, [[
 				'id' => 'test',
@@ -285,6 +302,7 @@ class NavigationManagerTest extends TestCase {
 				'name' => 'Test',
 				'active' => false,
 				'type' => 'settings',
+				'classes' => '',
 			]]), ['navigations' => [['route' => 'test.page.index', 'name' => 'Test', 'type' => 'settings']]]],
 			'admin' => [array_merge($apps, $defaults, [[
 				'id' => 'test',
@@ -294,6 +312,7 @@ class NavigationManagerTest extends TestCase {
 				'name' => 'Test',
 				'active' => false,
 				'type' => 'link',
+				'classes' => '',
 			]]), ['navigations' => [['@attributes' => ['role' => 'admin'], 'route' => 'test.page.index', 'name' => 'Test']]], true],
 			'no name' => [array_merge($apps, $defaults), ['navigations' => [['@attributes' => ['role' => 'admin'], 'route' => 'test.page.index']]], true],
 			'no admin' => [$defaults, ['navigations' => [['@attributes' => ['role' => 'admin'], 'route' => 'test.page.index', 'name' => 'Test']]]]

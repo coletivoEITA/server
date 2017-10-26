@@ -130,6 +130,11 @@
 						});
 					this._setSizes();
 					break;
+				case 'style':
+					if (value.buttons !== undefined) {
+						this.$buttonrow.addClass(value.buttons);
+					}
+					break;
 				case 'closeButton':
 					if(value) {
 						var $closeButton = $('<a class="oc-dialog-close"></a>');
@@ -207,8 +212,10 @@
 			// Ugly hack to catch remaining keyup events.
 			setTimeout(function() {
 				self._trigger('close', self);
-				self.$dialog.hide();
 			}, 200);
+
+			self.$dialog.remove();
+			this.destroy();
 		},
 		destroy: function() {
 			if(this.$title) {

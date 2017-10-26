@@ -618,16 +618,21 @@
 			});
 
 			this.registerAction({
-				name: 'Move',
-				displayName: t('files', 'Move'),
+				name: 'MoveCopy',
+				displayName: t('files', 'Move or copy'),
 				mime: 'all',
 				order: -25,
 				permissions: OC.PERMISSION_UPDATE,
 				iconClass: 'icon-external',
 				actionHandler: function (filename, context) {
-					OC.dialogs.filepicker(t('files', 'Target folder'), function(targetPath) {
-						context.fileList.move(filename, targetPath);
-					}, false, "httpd/unix-directory", true);
+					OC.dialogs.filepicker(t('files', 'Target folder'), function(targetPath, type) {
+						if (type === OC.dialogs.FILEPICKER_TYPE_COPY) {
+							context.fileList.copy(filename, targetPath);
+						}
+						if (type === OC.dialogs.FILEPICKER_TYPE_MOVE) {
+							context.fileList.move(filename, targetPath);
+						}
+					}, false, "httpd/unix-directory", true, OC.dialogs.FILEPICKER_TYPE_COPY_MOVE);
 				}
 			});
 
@@ -701,7 +706,7 @@
 	 * @property {String} mime mime type
 	 * @property {int} permissions permissions
 	 * @property {(Function|String)} icon icon path to the icon or function that returns it (deprecated, use iconClass instead)
-	 * @property {(Function|String)} iconClass class name of the icon (recommended for theming)
+	 * @property {(String|OCA.Files.FileActions~iconClassFunction)} iconClass class name of the icon (recommended for theming)
 	 * @property {OCA.Files.FileActions~renderActionFunction} [render] optional rendering function
 	 * @property {OCA.Files.FileActions~actionHandler} actionHandler action handler function
 	 */
@@ -738,6 +743,17 @@
 	 * @callback OCA.Files.FileActions~displayNameFunction
 	 * @param {OCA.Files.FileActionContext} context action context
 	 * @return {String} display name
+	 */
+
+	/**
+	 * Icon class function for actions.
+	 * The function returns the icon class of the action using
+	 * the given context information.
+	 *
+	 * @callback OCA.Files.FileActions~iconClassFunction
+	 * @param {String} fileName name of the file on which the action must be performed
+	 * @param {OCA.Files.FileActionContext} context action context
+	 * @return {String} icon class
 	 */
 
 	/**

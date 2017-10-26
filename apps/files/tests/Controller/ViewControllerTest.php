@@ -27,6 +27,8 @@ namespace OCA\Files\Tests\Controller;
 
 use OCA\Files\Controller\ViewController;
 use OCP\AppFramework\Http;
+use OCP\Files\File;
+use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
 use OCP\IUser;
 use OCP\Template;
@@ -68,14 +70,14 @@ class ViewControllerTest extends TestCase {
 
 	public function setUp() {
 		parent::setUp();
-		$this->request = $this->getMockBuilder('\OCP\IRequest')->getMock();
-		$this->urlGenerator = $this->getMockBuilder('\OCP\IURLGenerator')->getMock();
-		$this->l10n = $this->getMockBuilder('\OCP\IL10N')->getMock();
-		$this->config = $this->getMockBuilder('\OCP\IConfig')->getMock();
+		$this->request = $this->getMockBuilder(IRequest::class)->getMock();
+		$this->urlGenerator = $this->getMockBuilder(IURLGenerator::class)->getMock();
+		$this->l10n = $this->getMockBuilder(IL10N::class)->getMock();
+		$this->config = $this->getMockBuilder(IConfig::class)->getMock();
 		$this->eventDispatcher = $this->getMockBuilder('\Symfony\Component\EventDispatcher\EventDispatcherInterface')->getMock();
-		$this->userSession = $this->getMockBuilder('\OCP\IUserSession')->getMock();
+		$this->userSession = $this->getMockBuilder(IUserSession::class)->getMock();
 		$this->appManager = $this->getMockBuilder('\OCP\App\IAppManager')->getMock();
-		$this->user = $this->getMockBuilder('\OCP\IUser')->getMock();
+		$this->user = $this->getMockBuilder(IUser::class)->getMock();
 		$this->user->expects($this->any())
 			->method('getUID')
 			->will($this->returnValue('testuser1'));
@@ -142,6 +144,7 @@ class ViewControllerTest extends TestCase {
 				'active' => false,
 				'icon' => '',
 				'type' => 'link',
+				'classes' => '',
 			],
 			[
 				'id' => 'recent',
@@ -152,6 +155,7 @@ class ViewControllerTest extends TestCase {
 				'active' => false,
 				'icon' => '',
 				'type' => 'link',
+				'classes' => '',
 			],
 			[
 				'id' => 'favorites',
@@ -162,36 +166,40 @@ class ViewControllerTest extends TestCase {
 				'active' => false,
 				'icon' => '',
 				'type' => 'link',
+				'classes' => '',
 			],
 			[
 			'id' => 'sharingin',
 				'appname' => 'files_sharing',
 				'script' => 'list.php',
-				'order' => 10,
+				'order' => 15,
 				'name' => \OC::$server->getL10N('files_sharing')->t('Shared with you'),
 				'active' => false,
 				'icon' => '',
 				'type' => 'link',
+				'classes' => '',
 			],
 			[
 			'id' => 'sharingout',
 				'appname' => 'files_sharing',
 				'script' => 'list.php',
-				'order' => 15,
+				'order' => 16,
 				'name' => \OC::$server->getL10N('files_sharing')->t('Shared with others'),
 				'active' => false,
 				'icon' => '',
 				'type' => 'link',
+				'classes' => '',
 			],
 			[
 				'id' => 'sharinglinks',
 				'appname' => 'files_sharing',
 				'script' => 'list.php',
-				'order' => 20,
+				'order' => 17,
 				'name' => \OC::$server->getL10N('files_sharing')->t('Shared by link', []),
 				'active' => false,
 				'icon' => '',
 				'type' => 'link',
+				'classes' => '',
 			],
 			[
 				'id' => 'systemtagsfilter',
@@ -202,6 +210,7 @@ class ViewControllerTest extends TestCase {
 				'active' => false,
 				'icon' => '',
 				'type' => 'link',
+				'classes' => '',
 			],
 			[
 				'id' => 'trashbin',
@@ -212,6 +221,7 @@ class ViewControllerTest extends TestCase {
 				'active' => false,
 				'icon' => '',
 				'type' => 'link',
+				'classes' => 'pinned',
 			],
 		]);
 
@@ -273,12 +283,12 @@ class ViewControllerTest extends TestCase {
 	}
 
 	public function testShowFileRouteWithFolder() {
-		$node = $this->getMockBuilder('\OCP\Files\Folder')->getMock();
+		$node = $this->getMockBuilder(Folder::class)->getMock();
 		$node->expects($this->once())
 			->method('getPath')
 			->will($this->returnValue('/testuser1/files/test/sub'));
 
-		$baseFolder = $this->getMockBuilder('\OCP\Files\Folder')->getMock();
+		$baseFolder = $this->getMockBuilder(Folder::class)->getMock();
 
 		$this->rootFolder->expects($this->once())
 			->method('getUserFolder')
@@ -305,19 +315,19 @@ class ViewControllerTest extends TestCase {
 	}
 
 	public function testShowFileRouteWithFile() {
-		$parentNode = $this->getMockBuilder('\OCP\Files\Folder')->getMock();
+		$parentNode = $this->getMockBuilder(Folder::class)->getMock();
 		$parentNode->expects($this->once())
 			->method('getPath')
 			->will($this->returnValue('testuser1/files/test'));
 
-		$baseFolder = $this->getMockBuilder('\OCP\Files\Folder')->getMock();
+		$baseFolder = $this->getMockBuilder(Folder::class)->getMock();
 
 		$this->rootFolder->expects($this->once())
 			->method('getUserFolder')
 			->with('testuser1')
 			->will($this->returnValue($baseFolder));
 
-		$node = $this->getMockBuilder('\OCP\Files\File')->getMock();
+		$node = $this->getMockBuilder(File::class)->getMock();
 		$node->expects($this->once())
 			->method('getParent')
 			->will($this->returnValue($parentNode));
@@ -345,7 +355,7 @@ class ViewControllerTest extends TestCase {
 	}
 
 	public function testShowFileRouteWithInvalidFileId() {
-		$baseFolder = $this->getMockBuilder('\OCP\Files\Folder')->getMock();
+		$baseFolder = $this->getMockBuilder(Folder::class)->getMock();
 		$this->rootFolder->expects($this->once())
 			->method('getUserFolder')
 			->with('testuser1')
@@ -372,13 +382,13 @@ class ViewControllerTest extends TestCase {
 			->with('files_trashbin')
 			->will($this->returnValue(true));
 
-		$parentNode = $this->getMockBuilder('\OCP\Files\Folder')->getMock();
+		$parentNode = $this->getMockBuilder(Folder::class)->getMock();
 		$parentNode->expects($this->once())
 			->method('getPath')
 			->will($this->returnValue('testuser1/files_trashbin/files/test.d1462861890/sub'));
 
-		$baseFolderFiles = $this->getMockBuilder('\OCP\Files\Folder')->getMock();
-		$baseFolderTrash = $this->getMockBuilder('\OCP\Files\Folder')->getMock();
+		$baseFolderFiles = $this->getMockBuilder(Folder::class)->getMock();
+		$baseFolderTrash = $this->getMockBuilder(Folder::class)->getMock();
 
 		$this->rootFolder->expects($this->at(0))
 			->method('getUserFolder')
@@ -394,7 +404,7 @@ class ViewControllerTest extends TestCase {
 			->with(123)
 			->will($this->returnValue([]));
 
-		$node = $this->getMockBuilder('\OCP\Files\File')->getMock();
+		$node = $this->getMockBuilder(File::class)->getMock();
 		$node->expects($this->once())
 			->method('getParent')
 			->will($this->returnValue($parentNode));

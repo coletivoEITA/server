@@ -35,22 +35,22 @@ select,
 button, .button,
 input:not([type='range']),
 textarea,
-#quota,	.pager li a {
+.pager li a {
 	margin: 3px 3px 3px 0;
 	padding: 7px 6px;
 	font-size: 13px;
 	background-color: $color-main-background;
 	color: nc-lighten($color-main-text, 33%);
-	border: 1px solid nc-lighten($color-main-text, 86%);
+	border: 1px solid nc-darken($color-main-background, 14%);
 	outline: none;
 	border-radius: 3px;
+	cursor: text;
 	&:not(:disabled):not(.primary) {
-		/* no border on quota */
-		&:not(#quota):hover,
+		&:hover,
 		&:focus,
 		&.active {
 		/* active class used for multiselect */
-			border-color: $color-primary;
+			border-color: $color-primary-element;
 			outline: none;
 		}
 		&:active {
@@ -66,21 +66,21 @@ textarea,
 	}
 	/* Primary action button, use sparingly */
 	&.primary {
-		border: 1px solid $color-primary;
-		background-color: rgba($color-primary, .7);
+		background-color: $color-primary-element;
+		border: 1px solid $color-primary-text;
 		color: $color-primary-text;
 		cursor: pointer;
 		&:not(:disabled) {
 			&:hover,
 			&:focus {
-				background-color: rgba($color-primary, .85);
+				background-color: rgba($color-primary-element, .85);
 			}
 			&:active {
-				background-color: rgba($color-primary, .7);
+				background-color: rgba($color-primary-element, .7);
 			}
 		}
 		&:disabled {
-			background-color: rgba($color-primary, .7);
+			background-color: rgba($color-primary-element, .7);
 			color: nc-lighten($color-main-text, 73%);
 		}
 	}
@@ -163,7 +163,7 @@ textarea {
 		&:active,
 		&:hover,
 		&:focus {
-			border-color: nc-lighten($color-main-text, 86%) !important;
+			border-color: nc-darken($color-main-background, 14%) !important;
 			background-color: $color-main-background !important;
 		}
 	}
@@ -185,9 +185,6 @@ button img,
 .button img {
 	cursor: pointer;
 }
-#quota {
-	color: nc-lighten($color-main-text, 33%);
-}
 select,
 .button.multiselect {
 	font-weight: 400;
@@ -195,6 +192,8 @@ select,
 
 /* Radio & Checkboxes */
 input {
+	$color-checkbox-radio-disabled: nc-darken($color-main-background, 27%);
+	$color-checkbox-radio-border: nc-darken($color-main-background, 47%);
 	&[type='checkbox'],
 	&[type='radio'] {
 		&.radio,
@@ -221,26 +220,26 @@ input {
 				border-radius: 50%;
 				margin: 3px;
 				margin-top: 1px;
-				border: 1px solid nc-lighten($color-main-text, 53%);
+				border: 1px solid $color-checkbox-radio-border;
 			}
 			&:not(:disabled):not(:checked) + label:hover:before,
 			&:focus + label:before {
-				border-color: $color-primary;
+				border-color: $color-primary-element;
 			}
 			&:checked + label:before,
 			&.checkbox:indeterminate + label:before {
 			/* ^ :indeterminate have a strange behavior on radio,
 			so we respecified the checkbox class again to be safe */
 				box-shadow: inset 0px 0px 0px 2px $color-main-background;
-				background-color: $color-primary;
-				border-color: $color-primary
+				background-color: $color-primary-element;
+				border-color: $color-primary-element;
 			}
 			&:disabled + label:before {
-				border: 1px solid nc-lighten($color-main-text, 53%);
-				background-color: nc-lighten($color-main-text, 73%) !important; /* override other status */
+				border: 1px solid $color-checkbox-radio-border;
+				background-color: $color-checkbox-radio-disabled !important; /* override other status */
 			}
 			&:checked:disabled + label:before {
-				background-color: nc-lighten($color-main-text, 73%);
+				background-color: $color-checkbox-radio-disabled;
 			}
 		}
 		&.checkbox {
@@ -258,60 +257,45 @@ input {
 				background-image: url('../img/actions/checkbox-mixed.svg');
 			}
 		}
+
+		/* We do not use the nc-darken function as this si not supposed to be changed */
+		$color-checkbox-radio-white: #fff;
 		&.radio--white,
 		&.checkbox--white {
-			+ label:before {
-				border-color: nc-lighten($color-main-text, 86%);
-			}
-			&:not(:disabled):not(:checked) + label:hover:before,
+			+ label:before,
 			&:focus + label:before {
-				border-color: $color-main-background;
+				border-color: darken($color-checkbox-radio-white, 27%);
+			}
+			&:not(:disabled):not(:checked) + label:hover:before {
+				border-color: $color-checkbox-radio-white;
 			}
 			&:checked + label:before {
-				box-shadow: inset 0px 0px 0px 2px $color-main-text;
-				background-color: nc-darken($color-main-background, 8%);
-				border-color: nc-darken($color-main-background, 8%)
+				box-shadow: inset 0px 0px 0px 2px $color-main-background;
+				background-color: darken($color-checkbox-radio-white, 14%);
+				border-color: darken($color-checkbox-radio-white, 14%);
 			}
 			&:disabled + label:before {
-				background-color: nc-lighten($color-main-text, 33%) !important; /* override other status */
-				border-color: rgba($color-main-text, 0.4) !important; /* override other status */
+				background-color: darken($color-checkbox-radio-white, 27%) !important; /* override other status */
+				border-color: rgba($color-checkbox-radio-white, 0.4) !important; /* override other status */
 			}
 			&:checked:disabled + label:before {
-				box-shadow: inset 0px 0px 0px 2px $color-main-text;
-				border-color: nc-lighten($color-main-text, 33%);
-				background-color: nc-lighten($color-main-text, 33%);
+				box-shadow: inset 0px 0px 0px 2px $color-main-background;
+				border-color: rgba($color-checkbox-radio-white, 0.4) !important; /* override other status */
+				background-color: darken($color-checkbox-radio-white, 27%);
 			}
 		}
 		&.checkbox--white {
 			&:checked + label:before,
 			&:indeterminate + label:before {
 				background-color: transparent !important; /* Override default checked */
-				border-color: $color-main-background !important; /* Override default checked */
+				border-color: $color-checkbox-radio-white !important; /* Override default checked */
 				background-image: url('../img/actions/checkbox-mark-white.svg');
 			}
 			&:indeterminate + label:before {
 				background-image: url('../img/actions/checkbox-mixed-white.svg');
 			}
-			&:checked:disabled + label:after {
-				border-color: nc-lighten($color-main-text, 73%);
-			}
-			&:indeterminate:disabled + label:after {
-				background-color: nc-lighten($color-main-text, 73%);
-			}
-		}
-	}
-}
-#app-settings-content {
-	input {
-		&[type='checkbox'],
-		&[type='radio'] {
-			&.radio,
-			&.checkbox {
-				+ label {
-					display: inline-block;
-					width: 100%;
-					padding: 5px 0;
-				}
+			&:disabled + label:before {
+				opacity: 0.7; /* No other choice for white background image */
 			}
 		}
 	}
@@ -320,8 +304,9 @@ input {
 /* Select2 overriding. Merged to core with vendor stylesheet */
 .select2-drop {
 	margin-top: -2px;
+	background-color: $color-main-background;
 	&.select2-drop-active {
-		border-color: nc-lighten($color-main-text, 86%);
+		border-color: nc-darken($color-main-background, 14%);
 	}
 	.avatar {
 		display: inline-block;
@@ -354,7 +339,7 @@ input {
 			position: relative;
 			display: list-item;
 			padding: 12px;
-			background-color: $color-main-background;
+			background-color: transparent;
 			cursor: pointer;
 			color: nc-lighten($color-main-text, 33%);
 		}
@@ -362,10 +347,10 @@ input {
 			&.select2-selected {
 				background-color: nc-darken($color-main-background, 3%);
 			}
-			&.select2-highlighted {
+		}
+		.select2-highlighted {
 				background-color: nc-darken($color-main-background, 3%);
 				color: $color-main-text;
-			}
 		}
 	}
 }
@@ -386,7 +371,7 @@ input {
 		color: nc-lighten($color-main-text, 33%);
 		box-sizing: content-box;
 		border-radius: 3px;
-		border: 1px solid nc-lighten($color-main-text, 86%);
+		border: 1px solid nc-darken($color-main-background, 14%);
 		margin: 0;
 		padding: 2px 0;
 		min-height: auto;
@@ -400,7 +385,7 @@ input {
 				background-image: none;
 				background-color: $color-main-background;
 				color: nc-lighten($color-main-text, 33%);
-				border: 1px solid nc-lighten($color-main-text, 86%);
+				border: 1px solid nc-darken($color-main-background, 14%);
 			}
 			.select2-search-choice-close {
 				display: none;
@@ -408,6 +393,9 @@ input {
 		}
 		.select2-search-field input {
 			line-height: 20px;
+			&.select2-active {
+				background: none !important;
+			}
 		}
 	}
 }
@@ -428,7 +416,7 @@ input {
 		color: nc-lighten($color-main-text, 33%);
 		box-sizing: content-box;
 		border-radius: 3px;
-		border: 1px solid nc-lighten($color-main-text, 86%);
+		border: 1px solid nc-darken($color-main-background, 14%);
 		margin: 0;
 		padding: 2px 0;
 		padding-left: 6px;
@@ -444,8 +432,8 @@ input {
 			}
 			&.select2-search-choice-focus,
 			&:hover {
-				background-color: nc-darken($color-main-background, 8%);
-				border-color: nc-darken($color-main-background, 8%);
+				background-color: $color-border;
+				border-color: $color-border;
 			}
 		}
 		.select2-arrow {
@@ -468,33 +456,38 @@ input {
 	}
 }
 
-/* Select menus - TODO: move to jquery-ui-fixes.css
-----------------------------------*/
-.ui-menu {
+/* Progressbar */
+progress {
+	display: block;
+	width: 100%;
 	padding: 0;
-	.ui-menu-item a {
-		&.ui-state-focus, &.ui-state-active {
-			font-weight: inherit;
-			margin: 0;
+	border: 0 none;
+	background-color: nc-darken($color-main-background, 10%);
+	border-radius: 3px;
+	flex-basis: 100%;
+	height: 5px;
+	overflow: hidden;
+	&.warn {
+		&::-moz-progress-bar {
+			background: $color-error;
+		}
+		&::-webkit-progress-value {
+			background: $color-error;
 		}
 	}
-}
-
-.ui-widget-content {
-	background: $color-main-background;
-	border-top: none;
-}
-
-.ui-corner-all {
-	border-radius: 0;
-	border-bottom-left-radius: 3px;
-	border-bottom-right-radius: 3px;
-}
-
-.ui-state-hover, .ui-widget-content .ui-state-hover, .ui-widget-header .ui-state-hover, .ui-state-focus, .ui-widget-content .ui-state-focus, .ui-widget-header .ui-state-focus {
-	border: 1px solid transparent;
-	background: inherit;
-	color: $color-primary;
+	&::-webkit-progress-bar {
+		background: transparent;
+	}
+	&::-moz-progress-bar {
+		border-radius: 3px;
+		background: $color-primary;
+		transition: 250ms all ease-in-out;
+	}
+	&::-webkit-progress-value {
+		border-radius: 3px;
+		background: $color-primary;
+		transition: 250ms all ease-in-out;
+	}
 }
 
 /* Animation */

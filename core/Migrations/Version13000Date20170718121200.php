@@ -1,23 +1,34 @@
 <?php
+/**
+ * @copyright Copyright (c) 2017 Joas Schilling <coding@schilljs.com>
+ *
+ * @author Joas Schilling <coding@schilljs.com>
+ *
+ * @license GNU AGPL version 3 or any later version
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 namespace OC\Core\Migrations;
 
 use Doctrine\DBAL\Schema\Schema;
+use Doctrine\DBAL\Types\Type;
 use OCP\Migration\SimpleMigrationStep;
 use OCP\Migration\IOutput;
 
-/**
- * Auto-generated migration step: Please modify to your needs!
- */
 class Version13000Date20170718121200 extends SimpleMigrationStep {
-
-	/**
-	 * @param IOutput $output
-	 * @param \Closure $schemaClosure The `\Closure` returns a `Schema`
-	 * @param array $options
-	 * @since 13.0.0
-	 */
-	public function preSchemaChange(IOutput $output, \Closure $schemaClosure, array $options) {
-	}
 
 	/**
 	 * @param IOutput $output
@@ -56,10 +67,10 @@ class Version13000Date20170718121200 extends SimpleMigrationStep {
 				'notnull' => false,
 				'length' => 64,
 			]);
-			$table->addColumn('numeric_id', 'integer', [
+			$table->addColumn('numeric_id', Type::BIGINT, [
 				'autoincrement' => true,
 				'notnull' => true,
-				'length' => 4,
+				'length' => 20,
 			]);
 			$table->addColumn('available', 'integer', [
 				'notnull' => true,
@@ -106,10 +117,10 @@ class Version13000Date20170718121200 extends SimpleMigrationStep {
 
 		if (!$schema->hasTable('mimetypes')) {
 			$table = $schema->createTable('mimetypes');
-			$table->addColumn('id', 'integer', [
+			$table->addColumn('id', Type::BIGINT, [
 				'autoincrement' => true,
 				'notnull' => true,
-				'length' => 4,
+				'length' => 20,
 			]);
 			$table->addColumn('mimetype', 'string', [
 				'notnull' => true,
@@ -122,14 +133,14 @@ class Version13000Date20170718121200 extends SimpleMigrationStep {
 
 		if (!$schema->hasTable('filecache')) {
 			$table = $schema->createTable('filecache');
-			$table->addColumn('fileid', 'integer', [
+			$table->addColumn('fileid', Type::BIGINT, [
 				'autoincrement' => true,
 				'notnull' => true,
-				'length' => 4,
+				'length' => 20,
 			]);
-			$table->addColumn('storage', 'integer', [
+			$table->addColumn('storage', Type::BIGINT, [
 				'notnull' => true,
-				'length' => 4,
+				'length' => 20,
 				'default' => 0,
 			]);
 			$table->addColumn('path', 'string', [
@@ -141,23 +152,23 @@ class Version13000Date20170718121200 extends SimpleMigrationStep {
 				'length' => 32,
 				'default' => '',
 			]);
-			$table->addColumn('parent', 'integer', [
+			$table->addColumn('parent', Type::BIGINT, [
 				'notnull' => true,
-				'length' => 4,
+				'length' => 20,
 				'default' => 0,
 			]);
 			$table->addColumn('name', 'string', [
 				'notnull' => false,
 				'length' => 250,
 			]);
-			$table->addColumn('mimetype', 'integer', [
+			$table->addColumn('mimetype', Type::BIGINT, [
 				'notnull' => true,
-				'length' => 4,
+				'length' => 20,
 				'default' => 0,
 			]);
-			$table->addColumn('mimepart', 'integer', [
+			$table->addColumn('mimepart', Type::BIGINT, [
 				'notnull' => true,
-				'length' => 4,
+				'length' => 20,
 				'default' => 0,
 			]);
 			$table->addColumn('size', 'bigint', [
@@ -397,6 +408,7 @@ class Version13000Date20170718121200 extends SimpleMigrationStep {
 				'autoincrement' => true,
 				'notnull' => true,
 				'length' => 4,
+				'unsigned' => true,
 			]);
 			$table->addColumn('class', 'string', [
 				'notnull' => true,
@@ -453,6 +465,7 @@ class Version13000Date20170718121200 extends SimpleMigrationStep {
 				'autoincrement' => true,
 				'notnull' => true,
 				'length' => 4,
+				'unsigned' => true,
 			]);
 			$table->addColumn('uid', 'string', [
 				'notnull' => true,
@@ -480,21 +493,25 @@ class Version13000Date20170718121200 extends SimpleMigrationStep {
 				'notnull' => true,
 				'length' => 2,
 				'default' => 0,
+				'unsigned' => true,
 			]);
 			$table->addColumn('remember', 'smallint', [
 				'notnull' => true,
 				'length' => 1,
 				'default' => 0,
+				'unsigned' => true,
 			]);
 			$table->addColumn('last_activity', 'integer', [
 				'notnull' => true,
 				'length' => 4,
 				'default' => 0,
+				'unsigned' => true,
 			]);
 			$table->addColumn('last_check', 'integer', [
 				'notnull' => true,
 				'length' => 4,
 				'default' => 0,
+				'unsigned' => true,
 			]);
 			$table->addColumn('scope', 'text', [
 				'notnull' => false,
@@ -510,6 +527,7 @@ class Version13000Date20170718121200 extends SimpleMigrationStep {
 				'autoincrement' => true,
 				'notnull' => true,
 				'length' => 4,
+				'unsigned' => true,
 			]);
 			$table->addColumn('action', 'string', [
 				'notnull' => true,
@@ -520,6 +538,7 @@ class Version13000Date20170718121200 extends SimpleMigrationStep {
 				'notnull' => true,
 				'length' => 4,
 				'default' => 0,
+				'unsigned' => true,
 			]);
 			$table->addColumn('ip', 'string', [
 				'notnull' => true,
@@ -547,6 +566,7 @@ class Version13000Date20170718121200 extends SimpleMigrationStep {
 				'autoincrement' => true,
 				'notnull' => true,
 				'length' => 4,
+				'unsigned' => true,
 			]);
 			$table->addColumn('uid', 'string', [
 				'notnull' => true,
@@ -575,11 +595,13 @@ class Version13000Date20170718121200 extends SimpleMigrationStep {
 				'notnull' => true,
 				'length' => 4,
 				'default' => 0,
+				'unsigned' => true,
 			]);
 			$table->addColumn('categoryid', 'integer', [
 				'notnull' => true,
 				'length' => 4,
 				'default' => 0,
+				'unsigned' => true,
 			]);
 			$table->addColumn('type', 'string', [
 				'notnull' => true,
@@ -596,6 +618,7 @@ class Version13000Date20170718121200 extends SimpleMigrationStep {
 				'autoincrement' => true,
 				'notnull' => true,
 				'length' => 4,
+				'unsigned' => true,
 			]);
 			$table->addColumn('name', 'string', [
 				'notnull' => true,
@@ -632,6 +655,7 @@ class Version13000Date20170718121200 extends SimpleMigrationStep {
 				'notnull' => true,
 				'length' => 4,
 				'default' => 0,
+				'unsigned' => true,
 			]);
 			$table->addUniqueIndex(['objecttype', 'objectid', 'systemtagid'], 'mapping');
 		}
@@ -642,6 +666,7 @@ class Version13000Date20170718121200 extends SimpleMigrationStep {
 				'notnull' => true,
 				'length' => 4,
 				'default' => 0,
+				'unsigned' => true,
 			]);
 			$table->addColumn('gid', 'string', [
 				'notnull' => true,
@@ -655,6 +680,7 @@ class Version13000Date20170718121200 extends SimpleMigrationStep {
 				'autoincrement' => true,
 				'notnull' => true,
 				'length' => 4,
+				'unsigned' => true,
 			]);
 			$table->addColumn('lock', 'integer', [
 				'notnull' => true,
@@ -681,21 +707,25 @@ class Version13000Date20170718121200 extends SimpleMigrationStep {
 				'autoincrement' => true,
 				'notnull' => true,
 				'length' => 4,
+				'unsigned' => true,
 			]);
 			$table->addColumn('parent_id', 'integer', [
 				'notnull' => true,
 				'length' => 4,
 				'default' => 0,
+				'unsigned' => true,
 			]);
 			$table->addColumn('topmost_parent_id', 'integer', [
 				'notnull' => true,
 				'length' => 4,
 				'default' => 0,
+				'unsigned' => true,
 			]);
 			$table->addColumn('children_count', 'integer', [
 				'notnull' => true,
 				'length' => 4,
 				'default' => 0,
+				'unsigned' => true,
 			]);
 			$table->addColumn('actor_type', 'string', [
 				'notnull' => true,
@@ -886,12 +916,4 @@ class Version13000Date20170718121200 extends SimpleMigrationStep {
 		return $schema;
 	}
 
-	/**
-	 * @param IOutput $output
-	 * @param \Closure $schemaClosure The `\Closure` returns a `Schema`
-	 * @param array $options
-	 * @since 13.0.0
-	 */
-	public function postSchemaChange(IOutput $output, \Closure $schemaClosure, array $options) {
-	}
 }
