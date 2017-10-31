@@ -740,7 +740,7 @@ class Group_LDAPTest extends \Test\TestCase {
 			$pluginManager
 		);
 
-		$this->assertEquals($ldap->createGroup('gid'),'result');
+		$this->assertEquals($ldap->createGroup('gid'),true);
 	}
 
 	public function testCreateGroupFailing() {

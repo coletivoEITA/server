@@ -1098,14 +1098,15 @@ class Group_LDAP extends BackendUtility implements \OCP\GroupInterface, IGroupLD
 	 */
 	public function createGroup($gid) {
 		if ($this->groupPluginManager->implementsActions(Backend::CREATE_GROUP)) {
-			if ($ret = $this->groupPluginManager->createGroup($gid)) {
-				$this->access->connection->clearCache();
-				#update the list of groups in nextcloud internal db
-				$groups = $this->getGroups();
+			if ($dn = $this->groupPluginManager->createGroup($gid)) {
+				//updates group mapping
+				$this->access->dn2ocname($dn, $gid, false);
+				$this->access->connection->writeToCache("groupExists".$gid, true);
 			}
-			return $ret;
+			return $dn != null;
 		}
-		return null;
+		return false;
+		#throw new \Exception('Could not create group in LDAP backend.');
 	}
 
 	/**
@@ -1116,9 +1117,9 @@ class Group_LDAP extends BackendUtility implements \OCP\GroupInterface, IGroupLD
 	public function deleteGroup($gid) {
 		if ($this->groupPluginManager->implementsActions(Backend::DELETE_GROUP)) {
 			if ($ret = $this->groupPluginManager->deleteGroup($gid)) {
-				$this->access->connection->clearCache();
 				#delete group in nextcloud internal db
 				$this->access->getGroupMapper()->unmap($gid);
+				$this->access->connection->writeToCache("groupExists".$gid, false);
 			}
 			return $ret;
 		}
@@ -1136,7 +1137,7 @@ class Group_LDAP extends BackendUtility implements \OCP\GroupInterface, IGroupLD
 	public function addToGroup($uid, $gid) {
 		if ($this->groupPluginManager->implementsActions(Backend::ADD_TO_GROUP)) {
 			if ($ret = $this->groupPluginManager->addToGroup($uid, $gid)) {
-				$this->access->connection->clearCache();
+				#$this->access->connection->clearCache();
 			}
 			return $ret;
 		}
@@ -1154,7 +1155,7 @@ class Group_LDAP extends BackendUtility implements \OCP\GroupInterface, IGroupLD
 	public function removeFromGroup($uid, $gid) {
 		if ($this->groupPluginManager->implementsActions(Backend::REMOVE_FROM_GROUP)) {
 			if ($ret = $this->groupPluginManager->removeFromGroup($uid, $gid)) {
-				$this->access->connection->clearCache();
+				#$this->access->connection->clearCache();
 			}
 			return $ret;
 		}

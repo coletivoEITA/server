@@ -42,10 +42,17 @@ class UserPluginManager {
 		'deleteUser' => null
 	);
 
+	/**
+	 * @return int All implemented actions, except for 'deleteUser'
+	 */
 	public function getImplementedActions() {
 		return $this->respondToActions;
 	}
 
+	/**
+	 * Registers a group plugin that may implement some actions, overriding User_LDAP's user actions.
+	 * @param ILDAPGroupPlugin $plugin
+	 */
 	public function register(ILDAPUserPlugin $plugin) {
 		$respondToActions = $plugin->respondToActions();
 		$this->respondToActions |= $respondToActions;
@@ -61,10 +68,23 @@ class UserPluginManager {
 		}
 	}
 
+	/**
+	 * Signal if there is a registered plugin that implements some given actions
+	 * @param int $action Actions defined in \OC\User\Backend, like Backend::CREATE_USER
+	 * @return bool
+	 */
 	public function implementsActions($actions) {
-		return (bool) ($actions & $this->respondToActions);
+		return ($actions & $this->respondToActions) == $actions;
 	}
 
+	/**
+	 * Create a new user in LDAP Backend
+	 *
+	 * @param string $uid The username of the user to create
+	 * @param string $password The password of the new user
+	 * @return bool
+	 * @throws \Exception
+	 */
 	public function createUser($username, $password) {
 		$plugin = $this->which[Backend::CREATE_USER];
 
@@ -74,6 +94,13 @@ class UserPluginManager {
 		throw new \Exception('No plugin implements createUser in this LDAP Backend.');
 	}
 
+	/**
+	 * Change the password of a user*
+	 * @param string $uid The username
+	 * @param string $password The new password
+	 * @return bool
+	 * @throws \Exception
+	 */
 	public function setPassword($uid, $password) {
 		$plugin = $this->which[Backend::SET_PASSWORD];
 
@@ -83,6 +110,12 @@ class UserPluginManager {
 		throw new \Exception('No plugin implements setPassword in this LDAP Backend.');
 	}
 
+	/**
+	 * checks whether the user is allowed to change his avatar in Nextcloud
+	 * @param string $uid the Nextcloud user name
+	 * @return boolean either the user can or cannot
+	 * @throws \Exception
+	 */
 	public function canChangeAvatar($uid) {
 		$plugin = $this->which[Backend::PROVIDE_AVATAR];
 
@@ -92,6 +125,12 @@ class UserPluginManager {
 		throw new \Exception('No plugin implements canChangeAvatar in this LDAP Backend.');
 	}
 
+	/**
+	 * Get the user's home directory
+	 * @param string $uid the username
+	 * @return boolean
+	 * @throws \Exception
+	 */
 	public function getHome($uid) {
 		$plugin = $this->which[Backend::GET_HOME];
 
@@ -101,6 +140,12 @@ class UserPluginManager {
 		throw new \Exception('No plugin implements getHome in this LDAP Backend.');
 	}
 
+	/**
+	 * Get display name of the user
+	 * @param string $uid user ID of the user
+	 * @return string display name
+	 * @throws \Exception
+	 */
 	public function getDisplayName($uid) {
 		$plugin = $this->which[Backend::GET_DISPLAYNAME];
 
@@ -110,6 +155,13 @@ class UserPluginManager {
 		throw new \Exception('No plugin implements getDisplayName in this LDAP Backend.');
 	}
 
+	/**
+	 * Set display name of the user
+	 * @param string $uid user ID of the user
+	 * @param string $displayName new user's display name
+	 * @return string display name
+	 * @throws \Exception
+	 */
 	public function setDisplayName($uid, $displayName) {
 		$plugin = $this->which[Backend::SET_DISPLAYNAME];
 
@@ -119,6 +171,11 @@ class UserPluginManager {
 		throw new \Exception('No plugin implements setDisplayName in this LDAP Backend.');
 	}
 
+	/**
+	 * Count the number of users
+	 * @return int|bool
+	 * @throws \Exception
+	 */
 	public function countUsers() {
 		$plugin = $this->which[Backend::COUNT_USERS];
 
@@ -138,6 +195,7 @@ class UserPluginManager {
 	/**
 	 * @param $uid
 	 * @return bool
+	 * @throws \Exception
 	 */
 	public function deleteUser($uid) {
 		$plugin = $this->which['deleteUser'];

@@ -38,7 +38,7 @@ interface ILDAPGroupPlugin {
 
 	/**
 	 * @param string $gid
-	 * @return \OCP\IGroup
+	 * @return string|null The group DN if group creation was successful.
 	 */
     public function createGroup($gid);
 
